@@ -8,7 +8,7 @@ from subprocess import PIPE, CalledProcessError
 import traceback
 import time
 
-VER = 'v1.0.0'
+VER = 'v1.1.1'
 DESCRIPTION = '织梦字幕组自动压制工具\n' + \
               '—— ' + VER + ' by 谢耳朵w\n\n' + \
               '使用说明、获取最新版本、提交建议和错误请前往 https://github.com/zhimengsub/compresser'
@@ -41,6 +41,7 @@ PURGETMP = True
 PAUSE = True
 
 conf = configparser.ConfigParser()
+videosuffs = ['mkv', 'mp4']
 
 def log(*args, **kwargs):
     t = '['+time.strftime('%H:%M:%S', time.localtime())+']'
@@ -87,25 +88,27 @@ def assert_conf():
 # 获取输入
 def parse_workpath():
     if len(sys.argv) < 2:
-        raise FileNotFoundError('请将待处理文件夹拖放到本程序上！')
+        raise FileNotFoundError('不支持直接运行！请将待处理文件夹拖放到本程序上！')
     elif not os.path.exists(sys.argv[1]):
         raise FileNotFoundError('待处理文件夹格式错误！输入为'+sys.argv[1])
     workpath = sys.argv[1]
-    folder = os.path.basename(workpath)
+    # folder = os.path.basename(workpath)
     vid = ''
     assS = ''
     assT = ''
-    assert len(os.listdir(workpath)) == 3, '待处理文件夹内容不符合规范，应包含三个文件，一个.mkv，两个.ass。'
+    # assert len(os.listdir(workpath)) == 3, '待处理文件夹内容不符合规范，应包含三个文件，一个.mkv/.mp4，两个.ass。'
     for file in os.listdir(workpath):
         full = os.path.join(workpath, file)
-        if file.endswith('mkv'):
+        if any([file.endswith(suf) for suf in videosuffs]):
             vid = full
         elif file.endswith('(1).ass'):
             assT = full
-        else:
+        elif file.endswith('.ass'):
             assS = full
-    assert vid and assS and assT, '待处理文件夹内容不符合规范，应包含三个文件，一个.mkv，一个xx.ass，一个xx (1).ass。'
-    return folder, vid, assS, assT
+    assert vid, '未读取到视频(只支持.mkv/.mp4格式)'
+    assert assS, '未读取到简体字幕，命名不能以 (1) 结尾'
+    assert assT, '未读取到繁体字幕，命名应以 (1) 结尾'
+    return workpath, vid, assS, assT
 
 def get_animefolder_from_input():
     # 读取已存在的番，输入序号，或者新番输入番名
@@ -175,12 +178,14 @@ def main():
     print(DESCRIPTION)
 
     load_conf()
-    infolder, invid, assS, assT = parse_workpath()
+    workpath, invid, assS, assT = parse_workpath()  # full path
+
     invidname = os.path.basename(invid)
     assert_conf()
 
     ep = parse_vidname(invidname)
-    log('解析到集数为', ep)
+
+    log('输入文件夹解析结果：', '\n视频：', os.path.basename(invid), '\n简日字幕：', os.path.basename(assS), '\n繁日字幕：', os.path.basename(assT), '\n集数：', ep)
     print()
 
     anime_name, anime_folder = get_animefolder_from_input()
@@ -246,6 +251,7 @@ if __name__ == '__main__':
             print(err.stderr.decode('utf8'))
             print('\n外部程序执行报错！请检查报错信息，或将问题提交到 https://github.com/zhimengsub/compresser/issues')
     except FileNotFoundError as err:
+        print()
         print(err)
     except Exception as err:
         traceback.print_exc()

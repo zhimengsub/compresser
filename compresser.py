@@ -8,7 +8,7 @@ from subprocess import PIPE, CalledProcessError
 import traceback
 import time
 
-VER = 'v1.1.1'
+VER = 'v1.1.2'
 DESCRIPTION = '织梦字幕组自动压制工具\n' + \
               '—— ' + VER + ' by 谢耳朵w\n\n' + \
               '使用说明、获取最新版本、提交建议和错误请前往 https://github.com/zhimengsub/compresser'
@@ -160,6 +160,7 @@ def proc_video(invid, inaud, ass, resl, outvid, template):
 
 def parse_vidname(vidname):
     res = re.search('E(\d+)', vidname)
+    assert res, '解析集数失败！文件名中未找到Exx字样！'
     ep = int(res[1])
     return ep
 
@@ -250,7 +251,7 @@ if __name__ == '__main__':
         else:
             print(err.stderr.decode('utf8'))
             print('\n外部程序执行报错！请检查报错信息，或将问题提交到 https://github.com/zhimengsub/compresser/issues')
-    except FileNotFoundError as err:
+    except (FileNotFoundError, AssertionError) as err:
         print()
         print(err)
     except Exception as err:

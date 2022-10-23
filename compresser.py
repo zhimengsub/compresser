@@ -10,7 +10,7 @@ import time
 from datetime import timedelta
 from playsound import playsound
 
-VER = 'v1.1.3'
+VER = 'v1.1.4'
 DESCRIPTION = '织梦字幕组自动压制工具\n' + \
               '—— ' + VER + ' by 谢耳朵w\n\n' + \
               '使用说明、获取最新版本、提交建议和错误请前往 https://github.com/zhimengsub/compresser'
@@ -179,7 +179,7 @@ def get_outvidname(subfoldername, resl, subtype):
     return res
 
 def sec2hms(secs):
-    return '{:0>8}'.format(str(timedelta(seconds=secs)))
+    return '{:0>8}'.format(str(timedelta(seconds=int(secs))))
 
 def playring():
     playsound(RING)
@@ -217,7 +217,7 @@ def main():
     with open(TEMPLATE, 'r', encoding='utf8') as f:
         template = f.read()
 
-    st = int(time.time())
+    st = time.time()
     # 简体1080p
     log('生成简体1080p...')
     resl = '1080'
@@ -225,8 +225,8 @@ def main():
     outvidname = get_outvidname(subfoldername, resl, subtype)
     outvid = os.path.join(subfolder, outvidname)
     proc_video(invid, aud, assS, resl, outvid, template)
-    print('\n已输出至', outvid)
-    print('\n预计还需', sec2hms((int(time.time()) - st)*3))
+    log('已输出至', outvid)
+    log('预计还需', sec2hms((time.time() - st)*3))
 
     # 繁体1080p
     log('生成繁体1080p...')
@@ -235,8 +235,8 @@ def main():
     outvidname = get_outvidname(subfoldername, resl, subtype)
     outvid = os.path.join(subfolder, outvidname)
     proc_video(invid, aud, assT, resl, outvid, template)
-    print('\n已输出至', outvid)
-    print('\n预计还需', sec2hms((int(time.time()) - st)))
+    log('已输出至', outvid)
+    log('预计还需', sec2hms((time.time() - st)))
 
 
     # 简体720p
@@ -246,8 +246,8 @@ def main():
     outvidname = get_outvidname(subfoldername, resl, subtype)
     outvid = os.path.join(subfolder, outvidname)
     proc_video(invid, aud, assS, resl, outvid, template)
-    print('\n已输出至', outvid)
-    print('\n预计还需', sec2hms((int(time.time()) - st)/3))
+    log('已输出至', outvid)
+    log('预计还需', sec2hms((time.time() - st)/3))
 
     # 繁体720p
     log('生成繁体720p...')
@@ -256,8 +256,8 @@ def main():
     outvidname = get_outvidname(subfoldername, resl, subtype)
     outvid = os.path.join(subfolder, outvidname)
     proc_video(invid, aud, assT, resl, outvid, template)
-    print('\n已输出至', outvid)
-    print('\n共耗时', sec2hms((int(time.time()) - st)))
+    log('已输出至', outvid)
+    log('共耗时', sec2hms((time.time() - st)))
 
 if __name__ == '__main__':
     try:

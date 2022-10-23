@@ -7,21 +7,25 @@ import subprocess
 from subprocess import PIPE, CalledProcessError
 import traceback
 import time
+from datetime import timedelta
+from playsound import playsound
 
-VER = 'v1.1.2'
+VER = 'v1.1.3'
 DESCRIPTION = '织梦字幕组自动压制工具\n' + \
               '—— ' + VER + ' by 谢耳朵w\n\n' + \
               '使用说明、获取最新版本、提交建议和错误请前往 https://github.com/zhimengsub/compresser'
 
 ISEXE = hasattr(sys, 'frozen')
 BASE = os.path.dirname(sys.executable if ISEXE else __file__)  # exe/py所在路径
-BASE_TMP = sys._MEIPASS if ISEXE else BASE  # 打包后运行时系统tmp所在路径
-TEMPLATE = os.path.join(BASE_TMP, 'template.vpy')
+BASE_TMP = sys._MEIPASS if ISEXE else BASE  # 打包后运行时系统tmp所在路径，或py所在路径
+SRC = os.path.join(BASE_TMP, 'src')
+TEMPLATE = os.path.join(SRC, 'template.vpy')
+RING = os.path.join(SRC, 'ring.mp3').replace('\\', '/')
 TMP = os.path.join(BASE, 'tmp')
 os.makedirs(TMP, exist_ok=True)
 SCRIPT_TMP = os.path.join(TMP, 'script.vpy')
-M4A_TMP = os.path.join(TMP, 'm4a.m4a')
-VS_TMP = os.path.join(TMP, 'VS.mp4')
+M4A_TMP = '' # os.path.join(TMP, f'{invidname_noext}_m4a.m4a')
+VS_TMP = '' # os.path.join(TMP, f'{invidname_noext}_vs.mp4')
 FFMPEG = ''
 VSPIPE = ''
 X264 = ''
@@ -174,20 +178,29 @@ def get_outvidname(subfoldername, resl, subtype):
     res = subfoldername + '[' + resl + 'P]' + mid + '[' + subtype.value + '].mp4'
     return res
 
+def sec2hms(secs):
+    return '{:0>8}'.format(str(timedelta(seconds=secs)))
+
+def playring():
+    playsound(RING)
+
 def main():
-    global workpath
+    global workpath, VS_TMP, M4A_TMP
     print(DESCRIPTION)
 
     load_conf()
     workpath, invid, assS, assT = parse_workpath()  # full path
-
-    invidname = os.path.basename(invid)
     assert_conf()
 
-    ep = parse_vidname(invidname)
+    invidname = os.path.basename(invid)
+    invidname_noext = os.path.splitext(os.path.basename(invidname))[0]
 
+    ep = parse_vidname(invidname)
     log('输入文件夹解析结果：', '\n视频：', os.path.basename(invid), '\n简日字幕：', os.path.basename(assS), '\n繁日字幕：', os.path.basename(assT), '\n集数：', ep)
     print()
+
+    M4A_TMP = os.path.join(TMP, f'{invidname_noext}_m4a.m4a')
+    VS_TMP = os.path.join(TMP, f'{invidname_noext}_vs.mp4')
 
     anime_name, anime_folder = get_animefolder_from_input()
 
@@ -204,6 +217,7 @@ def main():
     with open(TEMPLATE, 'r', encoding='utf8') as f:
         template = f.read()
 
+    st = int(time.time())
     # 简体1080p
     log('生成简体1080p...')
     resl = '1080'
@@ -212,6 +226,7 @@ def main():
     outvid = os.path.join(subfolder, outvidname)
     proc_video(invid, aud, assS, resl, outvid, template)
     print('\n已输出至', outvid)
+    print('\n预计还需', sec2hms((int(time.time()) - st)*3))
 
     # 繁体1080p
     log('生成繁体1080p...')
@@ -221,6 +236,8 @@ def main():
     outvid = os.path.join(subfolder, outvidname)
     proc_video(invid, aud, assT, resl, outvid, template)
     print('\n已输出至', outvid)
+    print('\n预计还需', sec2hms((int(time.time()) - st)))
+
 
     # 简体720p
     log('生成简体720p...')
@@ -230,6 +247,7 @@ def main():
     outvid = os.path.join(subfolder, outvidname)
     proc_video(invid, aud, assS, resl, outvid, template)
     print('\n已输出至', outvid)
+    print('\n预计还需', sec2hms((int(time.time()) - st)/3))
 
     # 繁体720p
     log('生成繁体720p...')
@@ -239,12 +257,13 @@ def main():
     outvid = os.path.join(subfolder, outvidname)
     proc_video(invid, aud, assT, resl, outvid, template)
     print('\n已输出至', outvid)
-
+    print('\n共耗时', sec2hms((int(time.time()) - st)))
 
 if __name__ == '__main__':
     try:
         main()
         log('成功！')
+        playring()
     except CalledProcessError as err:
         if DEBUG or DEBUGMODE:
             traceback.print_exc()

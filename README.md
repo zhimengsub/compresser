@@ -22,7 +22,7 @@
      [PATHS]
      root_folder = D:\Animes
      ```
-     
+   
 2. 准备原片文件夹
    
     其中包含一个`.mkv`/`.mp4`视频，两个`.ass`字幕（简日、繁日），共三个文件。
@@ -56,3 +56,10 @@
 ## 提出修改建议 / 运行时的错误和BUG
 
 请提交[Issue](https://github.com/zhimengsub/SubtitleCleaner/issues)，需包含完整的报错信息。
+
+
+
+# TODO
+
+- [ ] 自定义成片命名格式
+- [ ] 自定义传入x264的参数

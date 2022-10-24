@@ -11,7 +11,7 @@ from datetime import timedelta
 from playsound import playsound
 from zhconv import convert as convlang
 
-VER = 'v1.1.5'
+VER = 'v1.1.6'
 DESCRIPTION = '织梦字幕组自动压制工具\n' + \
               '—— ' + VER + ' by 谢耳朵w\n\n' + \
               '使用说明、获取最新版本、提交建议和错误请前往 https://github.com/zhimengsub/compresser'
@@ -25,6 +25,7 @@ RING = os.path.join(SRC, 'ring.mp3').replace('\\', '/')
 TMP = os.path.join(BASE, 'tmp')
 os.makedirs(TMP, exist_ok=True)
 SCRIPT_TMP = os.path.join(TMP, 'script.vpy')
+SKIP = ['hint']
 M4A_TMP = '' # os.path.join(TMP, f'{invidname_noext}_m4a.m4a')
 VS_TMP = '' # os.path.join(TMP, f'{invidname_noext}_vs.mp4')
 FFMPEG = ''
@@ -95,7 +96,8 @@ def assert_conf():
     # assert config files
     for sec in conf.sections():
         for name, path in conf[sec].items():
-            assert os.path.exists(path), '错误！无法找到 [' + sec + '] ' + name + ' 路径 '+path+'，请重新配置conf.ini对应项。'
+            if name not in SKIP:
+                assert os.path.exists(path), '错误！无法找到 [' + sec + '] ' + name + ' 路径 '+path+'，请重新配置conf.ini对应项。'
 
 # 获取输入
 def parse_workpath():

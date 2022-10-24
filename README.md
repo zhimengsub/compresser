@@ -8,10 +8,9 @@
 
 ## 使用说明
 
-1. 编辑配置文件`conf.ini`（如不存在，双击运行`compresser.exe`后会在同一目录下生成）
+1. 编辑配置文件`conf.ini`（首次运行时双击运行`compresser.exe`后会在同一目录下生成）
    - 在`[TOOLS]`中配置各工具目录，如：
      ```ini
-     [TOOLS]
      ffmpeg = D:\Software\ffmpeg\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe
      vspipe = D:\Software\VapourSynth\VapourSynth64Portable\VapourSynth64\VSPipe.exe
      x264 = D:\Software\VapourSynth\VapourSynth64Portable\bin\x264.exe
@@ -19,10 +18,15 @@
      ```
    - 在`[PATHS]`中配置输出文件的根目录（具体作用见第4步），如：
      ```ini
-     [PATHS]
      root_folder = D:\Animes
      ```
-   
+   - （可选） 在`[PATHS]`中自定义结束提示音文件的目录，设为`true`则使用内置提示音，设为`false`则关闭提示音。如：
+     ```ini
+     # 自定义提示音
+     hint = D:\path\to\hint.mp3
+     # 关闭提示音
+     hint = false
+     ```
 2. 准备原片文件夹
    
     其中包含一个`.mkv`/`.mp4`视频，两个`.ass`字幕（简日、繁日），共三个文件。
@@ -33,6 +37,7 @@
 
 3. 将该文件夹拖放至`compresser.exe`，即可运行程序
 4. 按照程序提示配置输出文件命名格式。例如：
+   运行后提示：
    ```commandline
    请输入序号或新番全名(用于合集文件夹及成片命名):
    1. 电锯人 Chainsaw Man

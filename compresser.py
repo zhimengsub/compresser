@@ -9,8 +9,9 @@ import traceback
 import time
 from datetime import timedelta
 from playsound import playsound
+from zhconv import convert as convlang
 
-VER = 'v1.1.4'
+VER = 'v1.1.5'
 DESCRIPTION = '织梦字幕组自动压制工具\n' + \
               '—— ' + VER + ' by 谢耳朵w\n\n' + \
               '使用说明、获取最新版本、提交建议和错误请前往 https://github.com/zhimengsub/compresser'
@@ -61,6 +62,7 @@ def load_conf():
     global VSPIPE
     global X264
     global ROOT_FOLDER
+    global RING
     # default demo
     conf[KEY_TOOLS] = {
         'ffmpeg': r"D:\Software\ffmpeg\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe",
@@ -69,7 +71,8 @@ def load_conf():
         'qaac': r"D:\Software\MeGUI\MeGUI-2913-32\tools\qaac\qaac.exe",
     }
     conf[KEY_PATHS] = {
-        'root_folder': r"D:\animes"
+        'root_folder': r"D:\animes",
+        'hint': 'true',
     }
 
     if not os.path.exists(CONF):
@@ -82,6 +85,11 @@ def load_conf():
     VSPIPE = conf[KEY_TOOLS]['VSPipe']
     X264 = conf[KEY_TOOLS]['x264']
     ROOT_FOLDER = conf[KEY_PATHS]['root_folder']
+    hint = conf[KEY_PATHS]['hint']
+    if hint == 'false':
+        RING = ''
+    elif os.path.exists(hint):
+        RING = hint.replace('\\', '/')
 
 def assert_conf():
     # assert config files
@@ -176,13 +184,16 @@ def get_subfoldername(anime_name, ep):
 def get_outvidname(subfoldername, resl, subtype):
     mid = '[AVC]'
     res = subfoldername + '[' + resl + 'P]' + mid + '[' + subtype.value + '].mp4'
+    if subtype == SubType.TJ:
+        res = convlang(res, 'zh-hant')
     return res
 
 def sec2hms(secs):
     return '{:0>8}'.format(str(timedelta(seconds=int(secs))))
 
 def playring():
-    playsound(RING)
+    if os.path.exists(RING):
+        playsound(RING)
 
 def main():
     global workpath, VS_TMP, M4A_TMP

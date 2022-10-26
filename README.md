@@ -20,12 +20,16 @@
      ```ini
      root_folder = D:\Animes
      ```
-   - （可选） 在`[PATHS]`中自定义结束提示音文件的目录，设为`true`则使用内置提示音，设为`false`则关闭提示音。如：
+   - （可选） 在`[PATHS]`中自定义结束提示音文件的目录，设为空或路径不存在则关闭提示音。如：
      ```ini
      # 自定义提示音
      hint = D:\path\to\hint.mp3
      # 关闭提示音
-     hint = false
+     hint = 
+     ```
+   - （可选） 在`[PATHS]`中自定义VS脚本模版的目录(相对或绝对路径)，注意不是普通vpy脚本，请参考`src/template.vpy`中2～5行设置输入路径和成片分辨率变量。如：
+     ```ini
+     template = src\template.vpy
      ```
 2. 准备原片文件夹
    

@@ -11,7 +11,7 @@ from datetime import timedelta
 from playsound import playsound
 from zhconv import convert as convlang
 
-VER = 'v2.0.0'
+VER = 'v2.0.1'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -213,12 +213,22 @@ def get_subfoldername(anime_name, ep):
     res = pref + '[' + anime_name + '][' + '{:02d}'.format(ep) + '集]'
     return res
 
-def get_outvidname(subfoldername, resl, subtype):
+def get_outvidname(subfoldername, resl, subtype, vi):
+    pref = '' if vi <= 1 else f'[V{vi}]'
     mid = '[AVC]'
-    res = subfoldername + '[' + resl + 'P]' + mid + '[' + subtype.value + '].mp4'
+    res = pref + subfoldername + '[' + resl + 'P]' + mid + '[' + subtype.value + '].mp4'
     if subtype == SubType.TJ:
         res = convlang(res, 'zh-hant')
     return res
+
+def get_avail_outvidname(subfolder, subfoldername, resl, subtype):
+    vi = 1
+    while True:
+        outvidname = get_outvidname(subfoldername, resl, subtype, vi)
+        outvid = os.path.join(subfolder, outvidname)
+        if not os.path.exists(outvid):
+            return outvid
+        vi += 1
 
 def sec2hms(secs):
     return '{:0>8}'.format(str(timedelta(seconds=int(secs))))
@@ -267,8 +277,7 @@ def main():
     log('生成简体1080p...')
     resl = '1080'
     subtype = SubType.SJ
-    outvidname = get_outvidname(subfoldername, resl, subtype)
-    outvid = os.path.join(subfolder, outvidname)
+    outvid = get_avail_outvidname(subfolder, subfoldername, resl, subtype)
     proc_video(invid, aud, assS, resl, outvid, template)
     log('已输出至', outvid)
     log('预计还需', sec2hms((time.time() - st)*3))
@@ -277,8 +286,7 @@ def main():
     log('生成繁体1080p...')
     resl = '1080'
     subtype = SubType.TJ
-    outvidname = get_outvidname(subfoldername, resl, subtype)
-    outvid = os.path.join(subfolder, outvidname)
+    outvid = get_avail_outvidname(subfolder, subfoldername, resl, subtype)
     proc_video(invid, aud, assT, resl, outvid, template)
     log('已输出至', outvid)
     log('预计还需', sec2hms((time.time() - st)))
@@ -288,8 +296,7 @@ def main():
     log('生成简体720p...')
     resl = '720'
     subtype = SubType.SJ
-    outvidname = get_outvidname(subfoldername, resl, subtype)
-    outvid = os.path.join(subfolder, outvidname)
+    outvid = get_avail_outvidname(subfolder, subfoldername, resl, subtype)
     proc_video(invid, aud, assS, resl, outvid, template)
     log('已输出至', outvid)
     log('预计还需', sec2hms((time.time() - st)/3))
@@ -298,8 +305,7 @@ def main():
     log('生成繁体720p...')
     resl = '720'
     subtype = SubType.TJ
-    outvidname = get_outvidname(subfoldername, resl, subtype)
-    outvid = os.path.join(subfolder, outvidname)
+    outvid = get_avail_outvidname(subfolder, subfoldername, resl, subtype)
     proc_video(invid, aud, assT, resl, outvid, template)
     log('已输出至', outvid)
     log('共耗时', sec2hms((time.time() - st)))

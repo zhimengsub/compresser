@@ -11,7 +11,7 @@ from datetime import timedelta
 from playsound import playsound
 from zhconv import convert as convlang
 
-VER = 'v2.0.1'
+VER = 'v2.0.2'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -34,11 +34,13 @@ FFMPEG = ''
 VSPIPE = ''
 X264 = ''
 CONF = os.path.join(BASE, 'conf.ini')
+ARGSX264 = ''
 
 ROOT_FOLDER = ''
 
 KEY_TOOLS = 'TOOLS'
 KEY_PATHS = 'PATHS'
+KEY_ARGS = 'ARG_TEMPLATES'
 
 # for debug
 DEBUG = hasattr(sys, 'gettrace') and sys.gettrace() is not None
@@ -61,12 +63,7 @@ class SubType(enum.Enum):
     TJ = '繁日双语'
 
 def load_conf():
-    global FFMPEG
-    global VSPIPE
-    global X264
-    global ROOT_FOLDER
-    global RING
-    global TEMPLATE
+    global FFMPEG, VSPIPE, X264, ROOT_FOLDER, RING, TEMPLATE, ARGSX264
 
     if not os.path.exists(CONF):
         # default demo
@@ -81,6 +78,9 @@ def load_conf():
             'hint': r'src\ring.mp3',
             'template': r'src\template.vpy'
         }
+        conf[KEY_ARGS] = {
+            'x264': '--demuxer y4m --preset slower --ref 4 --merange 24 --me umh --bframes 10 --aq-mode 3 --aq-strength 0.7 --deblock 0:0 --trellis 2 --psy-rd 0.6:0.1 --crf 21 --output-depth 8 - -o "{VS_TMP}"'
+        }
         with open(CONF, 'w', encoding='utf8') as f:
             conf.write(f)
         raise FileNotFoundError('已生成配置文件 '+CONF+'\n\n请编辑后重新运行本程序！')
@@ -89,6 +89,8 @@ def load_conf():
     FFMPEG = conf[KEY_TOOLS]['ffmpeg']
     VSPIPE = conf[KEY_TOOLS]['VSPipe']
     X264 = conf[KEY_TOOLS]['x264']
+
+    ARGSX264 = conf[KEY_ARGS]['x264']
 
     ROOT_FOLDER = conf[KEY_PATHS]['root_folder']
     hint = conf[KEY_PATHS]['hint']
@@ -106,10 +108,12 @@ def load_conf():
 
 def assert_conf():
     # assert config files
-    for sec in conf.sections():
+    for sec in [KEY_TOOLS, KEY_PATHS]:
         for name, path in conf[sec].items():
             if name not in SKIP:
                 assert os.path.exists(path), '错误！无法找到 [' + sec + '] ' + name + ' 路径 '+path+'，请重新配置conf.ini对应项。'
+    args = conf[KEY_ARGS]
+    assert '"{VS_TMP}"' in args['x264'], '错误！[ARG_TEMPLATES] 中x264参数格式错误，参数-o的值应为"{VS_TMP}" (含引号)。'
 
 def to_abs(path):
     if os.path.isabs(path): return path
@@ -187,7 +191,8 @@ def proc_video(invid, inaud, ass, resl, outvid, template):
             f.write(script)
         # VS压制视频字幕
         cmdvspipe = f'"{VSPIPE}" "{SCRIPT_TMP}" -c y4m -'
-        cmdx264 = f'"{X264}" --demuxer y4m --preset slower --ref 4 --merange 24 --me umh --bframes 10 --aq-mode 3 --aq-strength 0.7 --deblock 0:0 --trellis 2 --psy-rd 0.6:0.1 --crf 21 --output-depth 8 - -o "{VS_TMP}"'
+        argsx264 = ARGSX264.format(VS_TMP=VS_TMP)
+        cmdx264 = X264 + ' ' + argsx264.strip()
         log('VS+x264压制中...')
         print()
         print(cmdvspipe,'|',cmdx264)
@@ -204,7 +209,9 @@ def proc_video(invid, inaud, ass, resl, outvid, template):
 
 def parse_vidname(vidname):
     res = re.search('E(\d+)', vidname)
-    assert res, '解析集数失败！文件名中未找到Exx字样！'
+    if not res:
+        res = re.search('(\d+)', vidname)
+    assert res, '解析集数失败！文件名中未找到集数字样！'
     ep = int(res[1])
     return ep
 
@@ -246,6 +253,7 @@ def main():
     assert_conf()
     if RING: log('使用提示音', RING.replace('/', '\\'))
     log('使用VS脚本模版', TEMPLATE)
+    log('使用X264参数', ARGSX264)
 
     invidname = os.path.basename(invid)
     invidname_noext = os.path.splitext(os.path.basename(invidname))[0]

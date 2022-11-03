@@ -33,7 +33,7 @@
    x264 = --demuxer y4m --preset slower --ref 4 --merange 24 --me umh --bframes 10 --aq-mode 3 --aq-strength 0.7 --deblock 0:0 --trellis 2 --psy-rd 0.6:0.1 --crf 21 --output-depth 8 - -o "{VS_TMP}"
    
    [ParallelTasks]
-   ; 添加并行任务，设置分辨率和字幕语言。每一行之间并行执行；同一行内串行执行，用逗号隔开。
+   ; 添加并行任务，设置分辨率和字幕语言。不同行之间并行执行；同一行内串行执行，用逗号隔开。
    task1 = 1080chs, 1080cht
    task2 = 720chs, 720cht
 

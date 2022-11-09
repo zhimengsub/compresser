@@ -24,9 +24,14 @@
    root_folder = D:\Animes
    ; (可选) 定义结束提示音文件的目录(相对路径或绝对路径)，等号右侧值为空则关闭提示音。
    hint = src\ring.mp3
-   ; (可选) 定义VS脚本模版的目录(相对或绝对路径)，
-   ;   注意不是普通vpy脚本，请参考src/template.vpy中2～5行设置输入路径和成片分辨率变量。
-   template = src\template.vpy
+   
+   [TemplatePaths]
+   ; (可选) 定义不同任务的VS脚本模版的目录(相对或绝对路径)，
+   ;   注意不是普通vpy脚本，请参考src\template.vpy中2～5行设置输入路径和成片分辨率变量。
+   720chs = src\template.vpy
+   720cht = src\template.vpy
+   1080chs = src\template.vpy
+   1080cht = src\template.vpy
    
    [ARG_TEMPLATES]
    ; (可选) 定义X264参数。注意-o参数必须为"{VS_TMP}" (含引号)
@@ -34,6 +39,7 @@
    
    [ParallelTasks]
    ; 添加并行任务，设置分辨率和字幕语言。不同行之间并行执行；同一行内串行执行，用逗号隔开。
+   ; 下面的代码表示依次压制1080chs和1080cht，与此同时也在依次压制720chs和720cht
    task1 = 1080chs, 1080cht
    task2 = 720chs, 720cht
 

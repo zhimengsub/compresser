@@ -42,6 +42,11 @@
    ; 下面的代码表示依次压制1080chs和1080cht，与此同时也在依次压制720chs和720cht
    task1 = 1080chs, 1080cht
    task2 = 720chs, 720cht
+   ; 下面的代码同时压制所有任务
+   ; task1 = 1080chs
+   ; task2 = 1080cht
+   ; task3 = 720chs
+   ; task4 = 720cht
 
    ```
 2. 准备原片文件夹

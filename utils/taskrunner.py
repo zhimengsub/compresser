@@ -10,18 +10,17 @@ from utils.subtype import SubType
 
 
 class Job:
-    def __init__(self, invid, invidname_noext, aud, ass, resl:str, subtype: SubType, subfolder, subfoldername):
-        name = f"{resl}{subtype.value}"
+    def __init__(self, jobname, tmpprefix, invid, aud, ass, resl:str, subtype: SubType, subfolder, subfoldername):
         self.invid = invid
         self.aud = aud
         self.ass = ass
         self.resl = resl
         self.subtype = subtype
         self.outvid = get_avail_outvidname(subfolder, subfoldername, resl, subtype)
-        self.vs_tmp = os.path.join(TMP, f'{invidname_noext}_{name}_vs.mp4')
-        self.script_tmp = os.path.join(TMP, f'{invidname_noext}_{name}_script.vpy')
-        self.prefix = name + ':'
-        with open(Paths.TemplatePaths[name], 'r', encoding='utf8') as f:
+        self.vs_tmp = os.path.join(TMP, f'{tmpprefix}_vs.mp4')
+        self.script_tmp = os.path.join(TMP, f'{tmpprefix}_script.vpy')
+        self.prefix = jobname + ':'
+        with open(Paths.TemplatePaths[jobname], 'r', encoding='utf8') as f:
             self.template = f.read()
 
     def run(self):

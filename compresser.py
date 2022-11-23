@@ -1,8 +1,9 @@
 import os
+import shutil
 import time
 import traceback
 from subprocess import CalledProcessError
-
+from playsound import PlaysoundException
 
 from utils.conf import Args, load_conf, assert_conf
 from utils.mainutils import playring, proc_audio
@@ -13,7 +14,7 @@ from utils.subtype import SubType
 from utils.consts import *
 from utils.taskrunner import Job, TaskRunner
 
-VER = 'v2.0.4'
+VER = 'v2.0.4.001'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -26,9 +27,9 @@ def main():
     print(DESCRIPTION)
 
     load_conf()
+    assert_conf()
     asses = {}  # type: dict[SubType, str]
     workpath, invid, asses[SubType.SJ], asses[SubType.TJ] = parse_workpath()  # full path
-    assert_conf()
     if Paths.RING: print('\n使用提示音', Paths.RING.replace('/', '\\'))
     print('\n使用VS脚本模版', Paths.TEMPLATE)
     print('\n使用X264参数', Args.ARGSX264)
@@ -59,8 +60,12 @@ def main():
         jobs = []
         for j in task:
             resl, subtype = parse_jobname(j)
+            jobname = f'{resl}{subtype.value}'
+            tmpprefix = f'{invidname_noext}_{jobname}'
             ass = asses[subtype]
-            job = Job(invid, invidname_noext, aud, ass, resl, subtype, subfolder, subfoldername)
+            asstmp = os.path.join(TMP, f'{tmpprefix}_ass.ass')
+            shutil.copyfile(ass, asstmp)
+            job = Job(jobname, tmpprefix, invid, aud, asstmp, resl, subtype, subfolder, subfoldername)
             jobs.append(job)
         task_runners.append(TaskRunner(jobs))
 
@@ -80,7 +85,7 @@ if __name__ == '__main__':
         else:
             print(err.stderr.decode('utf8'))
             print('\n外部程序执行报错！请检查报错信息，或将问题提交到 https://github.com/zhimengsub/compresser/issues')
-    except (FileNotFoundError, AssertionError) as err:
+    except (FileNotFoundError, AssertionError, PlaysoundException) as err:
         print()
         print(err)
     except Exception as err:

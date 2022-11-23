@@ -5,6 +5,7 @@ from datetime import timedelta
 
 from zhconv import convert as convlang
 
+from utils.conf import Args
 from utils.consts import *
 from utils.paths import Paths
 from utils.subtype import SubType
@@ -18,7 +19,7 @@ def log(*args, prefix='', **kwargs):
     else:
         print(t, *args, **kwargs)
 
-def parse_jobname(j):
+def parse_jobname(j) -> tuple[str, SubType]:
     resl, subname = j[:-3], j[-3:]
     subtype = SubType(subname)
     return resl, subtype
@@ -57,8 +58,10 @@ def parse_workpath():
         elif file.endswith('.ass'):
             assS = full
     assert vid, '未读取到视频(只支持.mkv/.mp4格式)'
-    assert assS, '未读取到简体字幕，命名不能以 (1) 结尾'
-    assert assT, '未读取到繁体字幕，命名应以 (1) 结尾'
+    if any('chs' in task for task in Args.TASKS):
+        assert assS, '未读取到简体字幕，命名不能以 (1) 结尾'
+    if any('cht' in task for task in Args.TASKS):
+        assert assT, '未读取到繁体字幕，命名应以 (1) 结尾'
     return workpath, vid, assS, assT
 
 def get_animefolder_from_input():

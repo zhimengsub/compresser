@@ -14,7 +14,7 @@ from utils.subtype import SubType
 from utils.consts import *
 from utils.taskrunner import Job, TaskRunner
 
-VER = 'v2.0.4.001'
+VER = 'v2.0.4.002'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -33,6 +33,10 @@ def main():
     if Paths.RING: print('\n使用提示音', Paths.RING.replace('/', '\\'))
     print('\n使用VS脚本模版', Paths.TEMPLATE)
     print('\n使用X264参数', Args.ARGSX264)
+
+    print('\n配置解析结果：', '\n工作目录：', Paths.ROOT_FOLDER, '\n压制任务：')
+    for i, task in enumerate(Args.TASKS):
+        print(f'{i+1}. ' + ' '.join(task))
 
     invidname = os.path.basename(invid)
     invidname_noext = os.path.splitext(os.path.basename(invidname))[0]

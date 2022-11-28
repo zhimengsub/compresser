@@ -69,8 +69,7 @@ def get_animefolder_from_input():
     if DEBUG or DEBUGMODE:
         anime_name = '测试'
     else:
-        print('工作目录', Paths.ROOT_FOLDER,'\n')
-        print('请输入序号或新番全名(用于合集文件夹及成片命名):')
+        print('\n请输入序号或新番全名(用于合集文件夹及成片命名):')
         names = [None]
         i = 1
         for name in os.listdir(Paths.ROOT_FOLDER):

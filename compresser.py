@@ -14,7 +14,7 @@ from utils.subtype import SubType
 from utils.consts import *
 from utils.taskrunner import Job, TaskRunner
 
-VER = 'v2.0.4.002'
+VER = 'v2.0.4.003'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -54,7 +54,7 @@ def main():
     M4A_TMP = os.path.join(TMP, f'{invidname_noext}_m4a.m4a')
 
     aud = M4A_TMP
-    if not ((DEBUG or SKIPAUD) and os.path.exists(aud)):
+    if not (SKIPAUD and os.path.exists(aud)):
         log('提取音频并转码为m4a...')
         proc_audio(invid, aud)
 
@@ -84,7 +84,7 @@ if __name__ == '__main__':
         log('成功！')
         playring()
     except CalledProcessError as err:
-        if DEBUG or DEBUGMODE:
+        if DEBUGMODE:
             traceback.print_exc()
         else:
             print(err.stderr.decode('utf8'))
@@ -96,7 +96,7 @@ if __name__ == '__main__':
         traceback.print_exc()
         print('\n发生了未知错误！请将上面的报错信息提交到 https://github.com/zhimengsub/compresser/issues')
     finally:
-        if not DEBUG and PURGETMP:
+        if PURGETMP:
             for name in os.listdir(TMP):
                 os.remove(os.path.join(TMP, name))
             os.removedirs(TMP)

@@ -30,11 +30,8 @@ class Job:
 
     def proc_video(self):
         log('生成'+self.subtype.simp_name()+self.resl+'p...', prefix=self.prefix)
-        try:
-            proc_video(self.invid, self.aud, self.ass, self.resl, self.outvid, self.template, self.vs_tmp, self.script_tmp, prefix=self.prefix)
-            log('已输出至', self.outvid, prefix=self.prefix)
-        except Exception as err:
-            log('错误：\n'+traceback.format_exc())
+        proc_video(self.invid, self.aud, self.ass, self.resl, self.outvid, self.template, self.vs_tmp, self.script_tmp, prefix=self.prefix)
+        log('已输出至', self.outvid, prefix=self.prefix)
 
 
 class TaskRunner(threading.Thread):

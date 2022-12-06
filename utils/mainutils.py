@@ -25,7 +25,7 @@ def gen_script(template, src, ass, resl):
     return template.format(src=src, ass=ass, w=w, h=h)
 
 def proc_video(invid, inaud, ass, resl, outvid, template, vs_tmp, script_tmp, prefix=''):
-    if not ((DEBUG or SKIPVSTMP) and os.path.exists(vs_tmp)):
+    if not (SKIPVSTMP and os.path.exists(vs_tmp)):
         # 生成vpy
         script = gen_script(template, invid, ass, resl)
         with open(script_tmp, 'w', encoding='utf8') as f:
@@ -37,8 +37,8 @@ def proc_video(invid, inaud, ass, resl, outvid, template, vs_tmp, script_tmp, pr
         cmdx264 = Paths.X264 + ' ' + argsx264.strip()
         log('VS+x264压制中...', prefix=prefix)
         log(cmdvspipe,'|',cmdx264, prefix=prefix)
-        vspipe = subprocess.Popen(cmdvspipe, stdout=PIPE, stderr=PIPE)
-        x264 = subprocess.run(cmdx264, stdin=vspipe.stdout, check=True, stdout=PIPE, stderr=PIPE)
+        vspipe = subprocess.Popen(cmdvspipe, stdout=PIPE, stderr=PIPE if not SHOWERR else None)
+        x264 = subprocess.run(cmdx264, stdin=vspipe.stdout, check=True, stdout=PIPE, stderr=PIPE if not SHOWERR else None)
         vspipe.stdout.close()
 
     # 与m4a音频封装

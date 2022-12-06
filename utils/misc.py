@@ -41,7 +41,7 @@ def sec2hms(secs):
 def parse_workpath():
     if len(sys.argv) < 2:
         raise FileNotFoundError('不支持直接运行！请将待处理文件夹拖放到本程序上！')
-    elif not os.path.exists(sys.argv[1]):
+    elif not os.path.exists(sys.argv[1]) or not os.path.isdir(sys.argv[1]):
         raise FileNotFoundError('待处理文件夹格式错误！输入为'+sys.argv[1])
     workpath = sys.argv[1]
     # folder = os.path.basename(workpath)
@@ -66,7 +66,7 @@ def parse_workpath():
 
 def get_animefolder_from_input():
     # 读取已存在的番，输入序号，或者新番输入番名
-    if DEBUG or DEBUGMODE:
+    if USETESTFOLDER:
         anime_name = '测试'
     else:
         print('\n请输入序号或新番全名(用于合集文件夹及成片命名):')

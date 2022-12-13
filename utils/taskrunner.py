@@ -3,6 +3,7 @@ import threading
 import time
 import traceback
 
+from utils.logger import initFileLogger
 from utils.mainutils import proc_video
 from utils.misc import get_avail_outvidname, sec2hms, log
 from utils.paths import TMP, Paths
@@ -22,6 +23,7 @@ class Job:
         self.prefix = jobname + ':'
         with open(Paths.TemplatePaths[jobname], 'r', encoding='utf8') as f:
             self.template = f.read()
+        self.logger_file = initFileLogger(jobname)
 
     def run(self):
         st = time.time()
@@ -30,7 +32,7 @@ class Job:
 
     def proc_video(self):
         log('生成'+self.subtype.simp_name()+self.resl+'p...', prefix=self.prefix)
-        proc_video(self.invid, self.aud, self.ass, self.resl, self.outvid, self.template, self.vs_tmp, self.script_tmp, prefix=self.prefix)
+        proc_video(self.invid, self.aud, self.ass, self.resl, self.outvid, self.template, self.vs_tmp, self.script_tmp, prefix=self.prefix, logger_file=self.logger_file)
         log('已输出至', self.outvid, prefix=self.prefix)
 
 

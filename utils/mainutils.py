@@ -1,5 +1,6 @@
 import os.path
 import subprocess
+from logging import Logger
 from subprocess import PIPE
 
 from playsound import playsound
@@ -24,7 +25,7 @@ def gen_script(template, src, ass, resl):
     h = '1080' if resl == '1080' else '720'
     return template.format(src=src, ass=ass, w=w, h=h)
 
-def proc_video(invid, inaud, ass, resl, outvid, template, vs_tmp, script_tmp, prefix=''):
+def proc_video(invid, inaud, ass, resl, outvid, template, vs_tmp, script_tmp, prefix='', logger_file:Logger=None):
     if not (SKIPVSTMP and os.path.exists(vs_tmp)):
         # 生成vpy
         script = gen_script(template, invid, ass, resl)
@@ -34,18 +35,37 @@ def proc_video(invid, inaud, ass, resl, outvid, template, vs_tmp, script_tmp, pr
         cmdvspipe = f'"{Paths.VSPIPE}" "{script_tmp}" -c y4m -'
         argsx264 = Args.ARGSX264.format(VS_TMP=vs_tmp)
         assert argsx264
-        cmdx264 = Paths.X264 + ' ' + argsx264.strip()
+        cmdx264 = f'"{Paths.X264}" {argsx264.strip()}'
         log('VS+x264压制中...', prefix=prefix)
         log(cmdvspipe,'|',cmdx264, prefix=prefix)
-        vspipe = subprocess.Popen(cmdvspipe, stdout=PIPE, stderr=PIPE if not SHOWERR else None)
-        x264 = subprocess.run(cmdx264, stdin=vspipe.stdout, check=True, stdout=PIPE, stderr=PIPE if not SHOWERR else None)
+        vspipe = subprocess.Popen(cmdvspipe, stdout=PIPE, stderr=PIPE)
+        x264 = subprocess.run(cmdx264, stdin=vspipe.stdout, check=True, stdout=PIPE, stderr=PIPE)
+        if logger_file:
+            logger_file.debug(cmdvspipe)
+            logger_file.debug('stderr:')
+            with vspipe.stderr:
+                for line in iter(vspipe.stdout.readline, b''):
+                    logger_file.debug(line)
+
+            logger_file.debug('\n'+cmdx264)
+            logger_file.debug('stdout:')
+            logger_file.debug(x264.stdout.decode('utf8'))
+            logger_file.debug('stderr:')
+            logger_file.debug(x264.stderr.decode('utf8'))
         vspipe.stdout.close()
 
     # 与m4a音频封装
     log('封装音频中...', prefix=prefix)
     cmdffmpeg = f'"{Paths.FFMPEG}" -y -i "{vs_tmp}" -i "{inaud}" -map 0:v -map 1:a -c:v copy -c:a copy "{outvid}"'
     log(cmdffmpeg, prefix=prefix)
-    subprocess.run(cmdffmpeg, check=True, stdout=PIPE, stderr=PIPE)
+    ffmpeg = subprocess.run(cmdffmpeg, check=True, stdout=PIPE, stderr=PIPE)
+    if logger_file:
+        logger_file.debug('\n'+cmdffmpeg)
+        logger_file.debug('stdout:')
+        logger_file.debug(ffmpeg.stdout.decode('utf8'))
+        logger_file.debug('stderr:')
+        logger_file.debug(ffmpeg.stderr.decode('utf8'))
+
 
 def playring():
     if os.path.exists(Paths.RING):

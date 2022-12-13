@@ -7,7 +7,6 @@ USETESTFOLDER = DEBUGMODE or False
 SKIPAUD = DEBUGMODE or False
 SKIPVSTMP = DEBUGMODE or False
 PURGETMP = DEBUGMODE or True
-SHOWERR = DEBUGMODE or False
 PAUSE = True
 
 videosuffs = ['mkv', 'mp4']

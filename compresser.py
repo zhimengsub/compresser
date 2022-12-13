@@ -14,7 +14,7 @@ from utils.subtype import SubType
 from utils.consts import *
 from utils.taskrunner import Job, TaskRunner
 
-VER = 'v2.0.4.003'
+VER = 'v2.0.4.004'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -81,8 +81,6 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-        log('成功！')
-        playring()
     except CalledProcessError as err:
         if DEBUGMODE:
             traceback.print_exc()
@@ -95,6 +93,9 @@ if __name__ == '__main__':
     except Exception as err:
         traceback.print_exc()
         print('\n发生了未知错误！请将上面的报错信息提交到 https://github.com/zhimengsub/compresser/issues')
+    else:
+        log('成功！')
+        playring()
     finally:
         if PURGETMP:
             for name in os.listdir(TMP):

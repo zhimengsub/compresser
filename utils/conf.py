@@ -47,20 +47,22 @@ def load_conf():
     defaults[KEY_ARGS] = {
         'x264': '--demuxer y4m --preset slower --ref 4 --merange 24 --me umh --bframes 10 --aq-mode 3 --aq-strength 0.7 --deblock 0:0 --trellis 2 --psy-rd 0.6:0.1 --crf 21 --output-depth 8 - -o "{VS_TMP}"'
     }
-    defaults[KEY_THR] = {
-        'task1': '1080chs, 1080cht',
-        'task2': '720chs, 720cht',
-    }
     defaults[KEY_SUF] = {
         'x264_output': '.mp4',
         'merged_output': '.mp4',
     }
-    conf.read_dict(defaults)
     if not os.path.exists(CONF):
+        defaults[KEY_THR] = {
+            'task1': '1080chs, 1080cht',
+            'task2': '720chs, 720cht',
+        }
+        conf.read_dict(defaults)
+
         with open(CONF, 'w', encoding='utf8') as f:
             conf.write(f)
         raise FileNotFoundError('已生成配置文件 '+CONF+'\n\n请编辑后重新运行本程序！')
     else:
+        conf.read_dict(defaults)
         conf.read(CONF, 'utf8')
         with open(CONF, 'w', encoding='utf8') as f:
             conf.write(f)

@@ -14,7 +14,7 @@ from utils.subtype import SubType
 from utils.consts import *
 from utils.taskrunner import Job, TaskRunner
 
-VER = 'v2.0.4.005'
+VER = 'v2.0.4.006'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \

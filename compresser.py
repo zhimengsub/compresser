@@ -14,7 +14,7 @@ from utils.subtype import SubType
 from utils.consts import *
 from utils.taskrunner import Job, TaskRunner
 
-VER = 'v2.0.4.004'
+VER = 'v2.0.4.005'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -27,7 +27,6 @@ def main():
     print(DESCRIPTION)
 
     load_conf()
-    assert_conf()
     asses = {}  # type: dict[SubType, str]
     workpath, invid, asses[SubType.SJ], asses[SubType.TJ] = parse_workpath()  # full path
     if Paths.RING: print('\n使用提示音', Paths.RING.replace('/', '\\'))

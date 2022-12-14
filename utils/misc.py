@@ -1,3 +1,4 @@
+import logging
 import os.path
 import re
 import time
@@ -101,7 +102,27 @@ def get_subfoldername(anime_name, ep):
 def get_outvidname(subfoldername, resl, subtype, vi):
     pref = '' if vi <= 1 else f'[V{vi}]'
     mid = '[AVC]'
-    res = pref + subfoldername + '[' + resl + 'P]' + mid + '[' + subtype.get_name() + '].mp4'
+    res = pref + subfoldername + '[' + resl + 'P]' + mid + '[' + subtype.get_name() + ']' + Args.Suffxies.merged_output
     if subtype == SubType.TJ:
         res = convlang(res, 'zh-hant')
     return res
+
+
+def log_pipe(logger: logging.Logger, cmd, pipe):
+    logger.debug('\n' + cmd)
+    logger.debug('stdout:')
+    with pipe.stdout:
+        for line in iter(pipe.stdout.readline, b''):
+            logger.debug(line.decode('utf8').strip())
+    logger.debug('stderr:')
+    with pipe.stderr:
+        for line in iter(pipe.stderr.readline, b''):
+            logger.debug(line.decode('utf8').strip())
+
+
+def log_process(logger, cmd, proc):
+    logger.debug('\n' + cmd)
+    logger.debug('stdout:')
+    logger.debug(proc.stdout.decode('utf8').strip())
+    logger.debug('stderr:')
+    logger.debug(proc.stderr.decode('utf8').strip())

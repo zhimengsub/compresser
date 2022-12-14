@@ -3,6 +3,7 @@ import threading
 import time
 import traceback
 
+from utils.conf import Args
 from utils.logger import initFileLogger
 from utils.mainutils import proc_video
 from utils.misc import get_avail_outvidname, sec2hms, log
@@ -18,7 +19,7 @@ class Job:
         self.resl = resl
         self.subtype = subtype
         self.outvid = get_avail_outvidname(subfolder, subfoldername, resl, subtype)
-        self.vs_tmp = os.path.join(TMP, f'{tmpprefix}_vs.mp4')
+        self.vs_tmp = os.path.join(TMP, f'{tmpprefix}_vs'+Args.Suffxies.x264_output)
         self.script_tmp = os.path.join(TMP, f'{tmpprefix}_script.vpy')
         self.prefix = jobname + ':'
         with open(Paths.TemplatePaths[jobname], 'r', encoding='utf8') as f:

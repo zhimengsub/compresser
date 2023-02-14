@@ -58,7 +58,7 @@ def parse_workpath():
             assT = full
         elif file.endswith('.ass'):
             assS = full
-    assert vid, '未读取到视频(只支持.mkv/.mp4格式)'
+    assert vid, '未读取到视频(只支持 ' + '/'.join(videosuffs) + ' 格式)'
     if any('chs' in task for task in Args.TASKS):
         assert assS, '未读取到简体字幕，命名不能以 (1) 结尾'
     if any('cht' in task for task in Args.TASKS):

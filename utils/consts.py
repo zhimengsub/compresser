@@ -9,4 +9,4 @@ SKIPVSTMP = DEBUGMODE or False
 PURGETMP = DEBUGMODE or True
 PAUSE = True
 
-videosuffs = ['mkv', 'mp4']
+videosuffs = ['mkv', 'mp4', 'm2ts']

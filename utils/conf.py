@@ -45,7 +45,7 @@ def load_conf():
         '1080cht': r'src\template.vpy',
     }
     defaults[KEY_ARGS] = {
-        'x264': '--demuxer y4m --preset slower --ref 4 --merange 24 --me umh --bframes 10 --aq-mode 3 --aq-strength 0.7 --deblock 0:0 --trellis 2 --psy-rd 0.6:0.1 --crf 21 --output-depth 8 - -o "{VS_TMP}"'
+        'x264': '--demuxer y4m --preset veryslow --ref 8 --merange 24 --me umh --bframes 10 --aq-mode 3 --aq-strength 0.7 --deblock 0:0 --trellis 2 --psy-rd 0.6:0.1 --crf 18.5 --output-depth 8 - -o "{VS_TMP}"'
     }
     defaults[KEY_SUF] = {
         'x264_output': '.mp4',

@@ -14,13 +14,12 @@ from utils.subtype import SubType
 from utils.consts import *
 from utils.taskrunner import Job, TaskRunner
 
-VER = 'v2.0.4.006'
+VER = 'v2.0.5'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
               '* 使用说明、获取最新版本、提交建议和错误请前往 https://github.com/zhimengsub/compresser\n' + \
               '************************************************************************************'
-
 
 def main():
     global workpath, VS_TMP, M4A_TMP
@@ -56,7 +55,6 @@ def main():
     if not (SKIPAUD and os.path.exists(aud)):
         log('提取音频并转码为m4a...')
         proc_audio(invid, aud)
-
 
     task_runners = []
     for task in Args.TASKS:

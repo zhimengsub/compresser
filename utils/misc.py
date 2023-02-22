@@ -8,7 +8,7 @@ from zhconv import convert as convlang
 
 from utils.conf import Args
 from utils.consts import *
-from utils.paths import Paths
+from utils.paths import Paths, TMP
 from utils.subtype import SubType
 
 
@@ -20,10 +20,14 @@ def log(*args, prefix='', **kwargs):
     else:
         print(t, *args, **kwargs)
 
-def parse_jobname(j) -> tuple[str, SubType]:
-    resl, subname = j[:-3], j[-3:]
+def parse_jobname(j: str) -> tuple[str, SubType, bool]:
+    noass = '_noass' in j
+    if noass:
+        resl, subname = j[:-9], j[-9:]
+    else:
+        resl, subname = j[:-3], j[-3:]
     subtype = SubType(subname)
-    return resl, subtype
+    return resl, subtype, noass
 
 def get_avail_outvidname(subfolder, subfoldername, resl, subtype):
     vi = 1
@@ -103,10 +107,16 @@ def get_outvidname(subfoldername, resl, subtype, vi):
     pref = '' if vi <= 1 else f'[V{vi}]'
     mid = '[AVC]'
     res = pref + subfoldername + '[' + resl + 'P]' + mid + '[' + subtype.get_name() + ']' + Args.Suffxies.merged_output
-    if subtype == SubType.TJ:
+    if subtype.is_TJ():
         res = convlang(res, 'zh-hant')
     return res
 
+
+def get_vs_tmp(tmpprefix):
+    return os.path.join(TMP, f'{tmpprefix}_vs' + Args.Suffxies.x264_output)
+
+def get_script_tmp(tmpprefix):
+    return os.path.join(TMP, f'{tmpprefix}_script.vpy')
 
 def log_pipe(logger: logging.Logger, cmd, pipe):
     logger.debug('\n' + cmd)
@@ -126,3 +136,44 @@ def log_process(logger, cmd, proc):
     logger.debug(proc.stdout.decode('utf8').strip())
     logger.debug('stderr:')
     logger.debug(proc.stderr.decode('utf8').strip())
+
+# 是否需要二压
+def has_img(ass) -> bool:
+    if not ass:
+        return False
+    with open(ass, 'r', encoding='utf_8_sig') as f:
+        while l:= f.readline():
+            if re.search(r'\\\dimg', l):
+                return True
+    return False
+
+def organize_tasks(tasks: list[list[str]], NO_ASS_SJ: bool, NO_ASS_TJ: bool) -> (list[list[str]], list[str]):
+    '''tests:
+    [ ['1080chs', '1080cht'],['720chs','720cht'] ] -> [ ['1080chs', '1080cht', '720chs_noass','720cht_noass'] ]
+    [ ['1080chs', '720cht'],['1080cht','720chs'] ] -> [ ['1080chs', '720chs_noass', '1080cht','720cht_noass'] ]
+    [ ['1080chs'] , ['1080cht'], ['720chs'], ['720cht'] ] -> [ ['1080chs', '720chs_noass'], ['1080cht','720cht_noass'] ]
+    '''
+    seen = []
+    tasks_normal = []
+    # filter out 720 jobs if NO ASS
+    for task in tasks:
+        task_normal = []
+        for j in task:
+            if j.startswith('720') and (j.endswith('chs') and NO_ASS_SJ or j.endswith('cht') and NO_ASS_TJ):
+                seen.append(j)
+            else:
+                task_normal.append(j)
+        if task_normal:
+            tasks_normal.append(task_normal)
+    # insert 720 jobs back after corresponding 1080/normal job
+    out_tasks = []
+    for task_normal in tasks_normal:
+        out_task = task_normal.copy()
+        for j_normal in task_normal:
+            if j_normal.startswith('1080'):
+                j_720 = j_normal.replace('1080', '720')
+                if j_720 in seen:
+                    out_task.append(j_720 + '_noass')
+                    seen.remove(j_720)
+        out_tasks.append(out_task)
+    return out_tasks, seen

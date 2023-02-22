@@ -5,10 +5,11 @@ from addict import Dict
 
 from utils.paths import CONF, BASE, BASE_TMP, Paths
 
-Args = Dict()
-Args.TASKS = []
-Args.ARGSX264 = ''
-Args.Suffxies = Dict()
+Args = Dict(
+    TASKS=[],  # type: list[list[str]]
+    ARGSX264='',
+    Suffxies={}
+)
 
 KEY_TOOLS = 'TOOLS'
 KEY_PATHS = 'PATHS'
@@ -41,8 +42,10 @@ def load_conf():
     defaults[KEY_TemplatePaths] = {
         '720chs': r'src\template.vpy',
         '720cht': r'src\template.vpy',
-        '1080chs': r'src\template.vpy',
-        '1080cht': r'src\template.vpy',
+        '1080chs': r'src\template2.vpy',
+        '1080cht': r'src\template2.vpy',
+        '720chs_noass': r'src\template_noass.vpy',
+        '720cht_noass': r'src\template_noass.vpy'
     }
     defaults[KEY_ARGS] = {
         'x264': '--demuxer y4m --preset veryslow --ref 8 --merange 24 --me umh --bframes 10 --aq-mode 3 --aq-strength 0.7 --deblock 0:0 --trellis 2 --psy-rd 0.6:0.1 --crf 18.5 --output-depth 8 - -o "{VS_TMP}"'
@@ -68,6 +71,7 @@ def load_conf():
             conf.write(f)
 
     assert_conf()
+    # load from conf
     try:
         # KEY_TOOLS
         Paths.FFMPEG = conf[KEY_TOOLS]['ffmpeg']
@@ -96,11 +100,8 @@ def load_conf():
             Args.TASKS.append(joblist)
 
         # KEY_TemplatePaths
-        for joblist in Args.TASKS:
-            for j in joblist:
-                TEMPLATE = conf[KEY_TemplatePaths][j]
-                Paths.TemplatePaths[j] = to_abs(TEMPLATE)
-                conf[KEY_PATHS]['template'] = Paths.TemplatePaths[j]
+        for j in conf[KEY_TemplatePaths].keys():
+            Paths.TemplatePaths[j] = to_abs(conf[KEY_TemplatePaths][j])
 
         # KEY_SUF
         Args.Suffxies.update(conf[KEY_SUF])
@@ -119,6 +120,7 @@ def assert_conf():
     for task in Args.TASKS:
         for j in task:
             assert j in _TASK_NAMES, '错误！['+KEY_THR+'] 中的任务名无法识别，应为 '+', '.join(_TASK_NAMES)+' 中的一种'
+            assert os.path.exists(conf[KEY_TemplatePaths][j]), '错误！无法找到 ['+KEY_TemplatePaths+'] 中的 ' + j + ' 项，路径'+conf[KEY_TemplatePaths][j]+'，请重新配置conf.ini对应项。'
     assert 'x264_output' in conf[KEY_SUF] and conf[KEY_SUF]['x264_output'].startswith('.'), '错误！['+KEY_SUF+'] 中的配置错误'
     assert 'merged_output' in conf[KEY_SUF] and conf[KEY_SUF]['merged_output'].startswith('.'), '错误！['+KEY_SUF+'] 中的配置错误'
 

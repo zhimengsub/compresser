@@ -3,7 +3,21 @@ import sys
 
 from addict import Dict
 
-Paths = Dict()
+Paths = Dict(
+    RING='',
+    ROOT_FOLDER='',
+    FFMPEG='',
+    VSPIPE='',
+    X264='',
+    TemplatePaths = {
+        '720chs': '',
+        '720cht': '',
+        '1080chs': '',
+        '1080cht': '',
+        '720chs_noass': '',
+        '720cht_noass': '',
+    }
+)
 
 ISEXE = hasattr(sys, 'frozen')
 BASE = os.path.dirname(sys.executable if ISEXE else os.path.dirname(__file__))  # exe/py所在路径
@@ -14,17 +28,4 @@ os.makedirs(TMP, exist_ok=True)
 LOG = os.path.join(BASE, 'log')
 os.makedirs(LOG, exist_ok=True)
 CONF = os.path.join(BASE, 'conf.ini')
-Paths.TEMPLATE = ''
-Paths.RING = ''
-Paths.ROOT_FOLDER = ''
-
-Paths.FFMPEG = ''
-Paths.VSPIPE = ''
-Paths.X264 = ''
-Paths.TemplatePaths = {
-    '720chs': '',
-    '720cht': '',
-    '1080chs': '',
-    '1080cht': '',
-}
 

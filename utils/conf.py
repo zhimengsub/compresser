@@ -8,7 +8,8 @@ from utils.paths import CONF, BASE, BASE_TMP, Paths
 Args = Dict(
     TASKS=[],  # type: list[list[str]]
     ARGSX264='',
-    Suffxies={}
+    Suffxies={},
+    OutPat={},
 )
 
 KEY_TOOLS = 'TOOLS'
@@ -17,6 +18,7 @@ KEY_TemplatePaths = 'TemplatePaths'
 KEY_ARGS = 'ARG_TEMPLATES'
 KEY_THR = 'ParallelTasks'
 KEY_SUF = 'Suffixes'
+KEY_OUTPAT = 'OutputPattern'
 
 # for conf assertion
 SKIP = ['hint']
@@ -54,6 +56,9 @@ def load_conf():
         'x264_output': '.mp4',
         'merged_output': '.mp4',
     }
+    defaults[KEY_OUTPAT] = {
+        'prefix': '[织梦字幕组]',
+    }
     if not os.path.exists(CONF):
         defaults[KEY_THR] = {
             'task1': '1080chs, 1080cht',
@@ -75,6 +80,7 @@ def load_conf():
     try:
         # KEY_TOOLS
         Paths.FFMPEG = conf[KEY_TOOLS]['ffmpeg']
+        Paths.QAAC = conf[KEY_TOOLS]['qaac']
         Paths.VSPIPE = conf[KEY_TOOLS]['VSPipe']
         Paths.X264 = conf[KEY_TOOLS]['x264']
 
@@ -105,6 +111,8 @@ def load_conf():
 
         # KEY_SUF
         Args.Suffxies.update(conf[KEY_SUF])
+        # KEY_OUTPAT
+        Args.OutPat.update(conf[KEY_OUTPAT])
 
     except KeyError as err:
         raise AssertionError('配置文件结构不完整，请删除'+CONF+'后重新运行本程序！')

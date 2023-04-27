@@ -12,12 +12,12 @@ from playsound import playsound, PlaysoundException
 from utils.conf import Args, load_conf
 from utils.consts import *
 from utils.logger import initFileLogger
-from utils.misc import log, parse_workpath, parse_vidname, get_animefolder_from_input, get_subfoldername, sec2hms, \
+from utils.misc import log, parse_workpath, parse_vidname, prompt_for_animefolder, get_subfoldername, sec2hms, \
     parse_jobname, log_process, has_img, organize_tasks, get_avail_outvidname, get_vs_tmp, get_script_tmp
 from utils.paths import TMP, Paths
 from utils.subtype import SubType
-
-VER = 'v2.0.6'
+#TODO 每个任务改不同的配置很麻烦，能否在全局设置的基础上，每个片单独设置压制脚本/参数
+VER = 'v2.0.7'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -26,11 +26,16 @@ DESCRIPTION = '*****************************************************************
 
 
 # 音频处理
-def proc_audio(invid, outaud):
-    # ffmpeg 提取音频，转码至m4a
-    cmdffmpeg = f'"{Paths.FFMPEG}" -y -i "{invid}" -vn -c:a aac "{outaud}"'
+def proc_audio(invid, extractedaud, outaud):
+    # 提取音频(QAAC无法处理mkv)
+    cmdffmpeg = f'"{Paths.FFMPEG}" -y -i "{invid}" -vn -c:a copy "{extractedaud}"'
     log(cmdffmpeg)
     subprocess.run(cmdffmpeg, check=True, stdout=PIPE, stderr=PIPE)
+    # 使用MeGUI调用QAAC时的默认参数处理音频，转码至m4a
+    cmdqaac = f'"{Paths.QAAC}" --ignorelength --threading -V 91 --no-delay "{extractedaud}" -o "{outaud}"'
+    # cmdffmpeg = f'"{Paths.FFMPEG}" -y -i "{invid}" -vn -c:a aac "{outaud}"'
+    log(cmdqaac)
+    subprocess.run(cmdqaac, check=True, stdout=PIPE, stderr=PIPE)
 
 # 视频处理
 def gen_script(template, src, ass, resl):
@@ -88,18 +93,21 @@ def main():
     if Paths.RING: print('\n使用提示音', Paths.RING.replace('/', '\\'))
     print('\n使用X264参数', Args.ARGSX264)
 
+    print('\n配置解析结果：')
+    print('工作目录：', Paths.ROOT_FOLDER)
+
+    # 是否不填加字幕（需要二压）
     NO_ASS_SJ = has_img(asses[SubType.SJ])
     NO_ASS_TJ = has_img(asses[SubType.TJ])
-    if NO_ASS_SJ:
-        Args.TASKS, isolated = organize_tasks(Args.TASKS, NO_ASS_SJ, NO_ASS_TJ)
-        assert not isolated, '错误！需要二压，但' + ', '.join(isolated) + '任务不存在1080版本！'
-
-    print('\n配置解析结果：', '\n工作目录：', Paths.ROOT_FOLDER, '\n压制任务：')
-    for i, task in enumerate(Args.TASKS):
-        print(f'{i+1}. ' + ' '.join(task))
-
+    isolated_noass_jobs = []
     if NO_ASS_SJ or NO_ASS_TJ:
-        print('（需要二压，已调整压制任务顺序！）')
+        Args.TASKS, isolated_noass_jobs = organize_tasks(Args.TASKS, NO_ASS_SJ, NO_ASS_TJ)
+        print('压制任务：（可能需要二压，已调整压制任务顺序！）')
+    else:
+        print('压制任务：')
+
+    for i, task in enumerate(Args.TASKS):
+        print(f'{i + 1}. ' + ' '.join(task))
 
     print('\n使用VS脚本模版：\n' + '\n'.join(f'{j}：{Paths.TemplatePaths[j]}' for task in Args.TASKS for j in task))
 
@@ -109,19 +117,16 @@ def main():
     ep = parse_vidname(invidname)
     print('\n输入文件夹解析结果：', '\n视频：', os.path.basename(invid), '\n简日字幕：', os.path.basename(asses[SubType.SJ]), '\n繁日字幕：', os.path.basename(asses[SubType.TJ]), '\n集数：', ep)
 
-    anime_name, anime_folder = get_animefolder_from_input()
+    anime_name, anime_folder = prompt_for_animefolder()
 
     subfoldername = get_subfoldername(anime_name, ep)  # 含集数的文件夹
     subfolder = os.path.join(anime_folder, subfoldername)
     os.makedirs(subfolder, exist_ok=True)
     print('\n成片将保存至', subfolder)
 
+    AAC_EXTACTED_TMP = os.path.join(TMP, f'{invidname_noext}_extracted.aac')
     M4A_TMP = os.path.join(TMP, f'{invidname_noext}_m4a.m4a')
-
     aud = M4A_TMP
-    if not (SKIPAUD and os.path.exists(aud)):
-        log('提取音频并转码为m4a...')
-        proc_audio(invid, aud)
 
     task_runners = []
     for task in Args.TASKS:
@@ -131,8 +136,13 @@ def main():
             jobname = f'{resl}{subtype.value}'
             tmpprefix = f'{invidname_noext}_{jobname}'
             if noass:
+                # 需要二压
                 # 720的invid应该改成1080的outvid
-                outvid_1080 = get_avail_outvidname(subfolder, subfoldername, '1080', subtype)
+                outvid_1080 = get_avail_outvidname(subfolder, subfoldername, '1080', subtype, add_prefix_on_exists=False)
+                # 检查是否存在对应的1080任务，或存在对应的1080成片
+                if j in isolated_noass_jobs and not os.path.exists(outvid_1080):
+                    raise AssertionError('错误！需要二压，但' + j + '任务不存在1080版任务或成片！')
+
                 job = Job(jobname, tmpprefix, outvid_1080, aud, resl, subtype, subfolder, subfoldername, ass=None)
             else:
                 ass = asses[subtype]
@@ -141,6 +151,10 @@ def main():
                 job = Job(jobname, tmpprefix, invid, aud, resl, subtype, subfolder, subfoldername, ass=asstmp)
             jobs.append(job)
         task_runners.append(TaskRunner(jobs))
+
+    if not (SKIPAUD and os.path.exists(aud)):
+        log('提取音频并转码为m4a...')
+        proc_audio(invid, AAC_EXTACTED_TMP, aud)
 
     st = time.time()
     [task_runner.start() for task_runner in task_runners]
@@ -155,7 +169,7 @@ class Job:
         self.ass = ass
         self.resl = resl
         self.subtype = subtype
-        self.outvid = get_avail_outvidname(subfolder, subfoldername, resl, subtype)
+        self.outvid = get_avail_outvidname(subfolder, subfoldername, resl, subtype, add_prefix_on_exists=True)
         self.vs_tmp = get_vs_tmp(tmpprefix)
         self.script_tmp = get_script_tmp(tmpprefix)
         self.prefix = jobname + ':'

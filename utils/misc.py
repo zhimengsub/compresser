@@ -29,14 +29,15 @@ def parse_jobname(j: str) -> tuple[str, SubType, bool]:
     subtype = SubType(subname)
     return resl, subtype, noass
 
-def get_avail_outvidname(subfolder, subfoldername, resl, subtype):
+def get_avail_outvidname(subfolder, subfoldername, resl, subtype, add_prefix_on_exists=True):
     vi = 1
     while True:
         outvidname = get_outvidname(subfoldername, resl, subtype, vi)
         outvid = os.path.join(subfolder, outvidname)
-        if not os.path.exists(outvid):
-            return outvid
-        vi += 1
+        if add_prefix_on_exists and os.path.exists(outvid):
+            vi += 1
+            continue
+        return outvid
 
 def sec2hms(secs):
     return '{:0>8}'.format(str(timedelta(seconds=int(secs))))
@@ -69,7 +70,7 @@ def parse_workpath():
         assert assT, '未读取到繁体字幕，命名应以 (1) 结尾'
     return workpath, vid, assS, assT
 
-def get_animefolder_from_input():
+def prompt_for_animefolder():
     # 读取已存在的番，输入序号，或者新番输入番名
     if USETESTFOLDER:
         anime_name = '测试'
@@ -99,7 +100,7 @@ def parse_vidname(vidname):
     return ep
 
 def get_subfoldername(anime_name, ep):
-    pref = '[织梦字幕组]'
+    pref = Args.OutPat['prefix']
     res = pref + '[' + anime_name + '][' + '{:02d}'.format(ep) + '集]'
     return res
 
@@ -152,15 +153,18 @@ def organize_tasks(tasks: list[list[str]], NO_ASS_SJ: bool, NO_ASS_TJ: bool) -> 
     [ ['1080chs', '1080cht'],['720chs','720cht'] ] -> [ ['1080chs', '1080cht', '720chs_noass','720cht_noass'] ]
     [ ['1080chs', '720cht'],['1080cht','720chs'] ] -> [ ['1080chs', '720chs_noass', '1080cht','720cht_noass'] ]
     [ ['1080chs'] , ['1080cht'], ['720chs'], ['720cht'] ] -> [ ['1080chs', '720chs_noass'], ['1080cht','720cht_noass'] ]
+    :param NO_ASS_SJ: 不需要ass文件（需要二压）
+    :returns: [out_tasks, isolated_noass_jobs: 没有对应1080版的720二压任务]
     '''
-    seen = []
+    noass_jobs = []  # 需要二压的任务
     tasks_normal = []
+    # 取出720版，如果有对应的1080版则插入其后方
     # filter out 720 jobs if NO ASS
     for task in tasks:
         task_normal = []
         for j in task:
             if j.startswith('720') and (j.endswith('chs') and NO_ASS_SJ or j.endswith('cht') and NO_ASS_TJ):
-                seen.append(j)
+                noass_jobs.append(j + '_noass')
             else:
                 task_normal.append(j)
         if task_normal:
@@ -171,9 +175,14 @@ def organize_tasks(tasks: list[list[str]], NO_ASS_SJ: bool, NO_ASS_TJ: bool) -> 
         out_task = task_normal.copy()
         for j_normal in task_normal:
             if j_normal.startswith('1080'):
-                j_720 = j_normal.replace('1080', '720')
-                if j_720 in seen:
-                    out_task.append(j_720 + '_noass')
-                    seen.remove(j_720)
-        out_tasks.append(out_task)
-    return out_tasks, seen
+                j_720_noass = j_normal.replace('1080', '720') + '_noass'
+                if j_720_noass in noass_jobs:
+                    out_task.append(j_720_noass)
+                    noass_jobs.remove(j_720_noass)
+        if out_task:
+            out_tasks.append(out_task)
+    # 没有对应1080版的720二压任务作为单独的tasks加入，后续再判断是否需要abort
+    if noass_jobs:
+        out_tasks.append([j_720_noass for j_720_noass in noass_jobs])
+
+    return out_tasks, noass_jobs

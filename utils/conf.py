@@ -8,6 +8,7 @@ from utils.paths import CONF, BASE, BASE_TMP, Paths
 Args = Dict(
     TASKS=[],  # type: list[list[str]]
     ARGSX264='',
+    ARGSQAAC='',
     Suffxies={},
     OutPat={},
 )
@@ -47,10 +48,12 @@ def load_conf():
         '1080chs': r'src\template2.vpy',
         '1080cht': r'src\template2.vpy',
         '720chs_noass': r'src\template_noass.vpy',
-        '720cht_noass': r'src\template_noass.vpy'
+        '720cht_noass': r'src\template_noass.vpy',
+        'audio': r'src\template_audio.vpy'
     }
     defaults[KEY_ARGS] = {
-        'x264': '--demuxer y4m --preset veryslow --ref 8 --merange 24 --me umh --bframes 10 --aq-mode 3 --aq-strength 0.7 --deblock 0:0 --trellis 2 --psy-rd 0.6:0.1 --crf 18.5 --output-depth 8 - -o "{VS_TMP}"'
+        'x264': '--demuxer y4m --preset veryslow --ref 8 --merange 24 --me umh --bframes 10 --aq-mode 3 --aq-strength 0.7 --deblock 0:0 --trellis 2 --psy-rd 0.6:0.1 --crf 18.5 --output-depth 8 - -o "{VS_TMP}"',
+        'qaac': '--ignorelength --threading -V 91 --no-delay - -o "{M4A_TMP}"'
     }
     defaults[KEY_SUF] = {
         'x264_output': '.mp4',
@@ -86,6 +89,7 @@ def load_conf():
 
         # KEY_ARGS
         Args.ARGSX264 = conf[KEY_ARGS]['x264']
+        Args.ARGSQAAC = conf[KEY_ARGS]['qaac']
 
         # KEY_PATHS
         Paths.ROOT_FOLDER = conf[KEY_PATHS]['root_folder']

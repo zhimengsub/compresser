@@ -17,6 +17,7 @@ Paths = Dict(
         '1080cht': '',
         '720chs_noass': '',
         '720cht_noass': '',
+        'audio': '',
     }
 )
 

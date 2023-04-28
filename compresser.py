@@ -17,7 +17,7 @@ from utils.misc import log, parse_workpath, parse_vidname, prompt_for_animefolde
 from utils.paths import TMP, Paths
 from utils.subtype import SubType
 #TODO 每个任务改不同的配置很麻烦，能否在全局设置的基础上，每个片单独设置压制脚本/参数
-VER = 'v2.0.7'
+VER = 'v2.0.8'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -26,16 +26,31 @@ DESCRIPTION = '*****************************************************************
 
 
 # 音频处理
-def proc_audio(invid, extractedaud, outaud):
-    # 提取音频(QAAC无法处理mkv)
-    cmdffmpeg = f'"{Paths.FFMPEG}" -y -i "{invid}" -vn -c:a copy "{extractedaud}"'
-    log(cmdffmpeg)
-    subprocess.run(cmdffmpeg, check=True, stdout=PIPE, stderr=PIPE)
-    # 使用MeGUI调用QAAC时的默认参数处理音频，转码至m4a
-    cmdqaac = f'"{Paths.QAAC}" --ignorelength --threading -V 91 --no-delay "{extractedaud}" -o "{outaud}"'
-    # cmdffmpeg = f'"{Paths.FFMPEG}" -y -i "{invid}" -vn -c:a aac "{outaud}"'
-    log(cmdqaac)
-    subprocess.run(cmdqaac, check=True, stdout=PIPE, stderr=PIPE)
+def proc_audio(invid, outaud, template, script_tmp, logger_file):
+    # 生成y音频用vpy
+    script = gen_audio_script(template, invid)
+    with open(script_tmp, 'w', encoding='utf8') as f:
+        f.write(script)
+    # vs打开后喂给qaac
+    cmdvspipe = f'"{Paths.VSPIPE}" "{script_tmp}" -o 1 -c wav -'
+    argsqaac = Args.ARGSQAAC.format(M4A_TMP=outaud)
+    assert argsqaac
+    cmdqaac = f'"{Paths.QAAC}" {argsqaac.strip()}'
+    log(cmdvspipe, '|', cmdqaac)
+    logger_file.debug(cmdvspipe)
+    vspipe = subprocess.Popen(cmdvspipe, stdout=PIPE, stderr=PIPE)
+    try:
+        qaac = subprocess.run(cmdqaac, stdin=vspipe.stdout, stdout=PIPE, stderr=PIPE)
+    finally:
+        if logger_file:
+            logger_file.debug('')
+            log_process(logger_file, cmdqaac, qaac)
+    vspipe.stdout.close()
+    vspipe.stderr.close()
+
+def gen_audio_script(template, src):
+    assert '{src}' in template, 'vpy脚本不符合要求！需要设置输入路径变量为r"{src}"！'
+    return template.format(src=src)
 
 # 视频处理
 def gen_script(template, src, ass, resl):
@@ -92,6 +107,7 @@ def main():
     workpath, invid, asses[SubType.SJ], asses[SubType.TJ] = parse_workpath()  # full path
     if Paths.RING: print('\n使用提示音', Paths.RING.replace('/', '\\'))
     print('\n使用X264参数', Args.ARGSX264)
+    print('\n使用QAAC参数', Args.ARGSQAAC)
 
     print('\n配置解析结果：')
     print('工作目录：', Paths.ROOT_FOLDER)
@@ -102,7 +118,7 @@ def main():
     isolated_noass_jobs = []
     if NO_ASS_SJ or NO_ASS_TJ:
         Args.TASKS, isolated_noass_jobs = organize_tasks(Args.TASKS, NO_ASS_SJ, NO_ASS_TJ)
-        print('压制任务：（可能需要二压，已调整压制任务顺序！）')
+        print('压制任务：（需要二压，已调整压制任务顺序！）')
     else:
         print('压制任务：')
 
@@ -124,7 +140,6 @@ def main():
     os.makedirs(subfolder, exist_ok=True)
     print('\n成片将保存至', subfolder)
 
-    AAC_EXTACTED_TMP = os.path.join(TMP, f'{invidname_noext}_extracted.aac')
     M4A_TMP = os.path.join(TMP, f'{invidname_noext}_m4a.m4a')
     aud = M4A_TMP
 
@@ -154,7 +169,12 @@ def main():
 
     if not (SKIPAUD and os.path.exists(aud)):
         log('提取音频并转码为m4a...')
-        proc_audio(invid, AAC_EXTACTED_TMP, aud)
+        logger_file = initFileLogger('audio')
+        with open(Paths.TemplatePaths.audio, 'r', encoding='utf8') as f:
+            template_audio = f.read()
+        tmpprefix = f'{invidname_noext}_audio'
+        script_audio_tmp = get_script_tmp(tmpprefix)
+        proc_audio(invid, aud, template_audio, script_audio_tmp, logger_file)
 
     st = time.time()
     [task_runner.start() for task_runner in task_runners]

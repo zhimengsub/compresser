@@ -48,7 +48,7 @@ def parse_workpath(workpath):
     if not workpath:
         raise FileNotFoundError('不支持直接运行！请将待处理文件夹拖放到本程序上！')
     elif not os.path.exists(workpath) or not os.path.isdir(workpath):
-        raise FileNotFoundError('待处理文件夹格式错误！输入为'+workpath)
+        raise FileNotFoundError('待处理文件夹不存在！输入为'+workpath)
     # folder = os.path.basename(workpath)
     vid = ''
     assS = ''
@@ -63,9 +63,9 @@ def parse_workpath(workpath):
         elif file.endswith('.ass'):
             assS = full
     assert vid, '未读取到视频(只支持 ' + '/'.join(videosuffs) + ' 格式)'
-    if any('chs' in task for task in Args.TASKS):
+    if any('chs' in subtask for task in Args.TASKS for subtask in task):
         assert assS, '未读取到简体字幕，命名不能以 (1) 结尾'
-    if any('cht' in task for task in Args.TASKS):
+    if any('cht' in subtask for task in Args.TASKS for subtask in task):
         assert assT, '未读取到繁体字幕，命名应以 (1) 结尾'
     return workpath, vid, assS, assT
 

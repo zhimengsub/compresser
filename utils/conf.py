@@ -30,8 +30,6 @@ conf = configparser.ConfigParser()
 
 def load_conf(conf_path):
     defaults = {}
-    if not os.path.isabs(conf_path):
-        conf_path = Path(BASE, conf_path).resolve().__str__()
 
     # default demo
     defaults[KEY_TOOLS] = {
@@ -62,7 +60,8 @@ def load_conf(conf_path):
         'merged_output': '.mp4',
     }
     defaults[KEY_OUTPAT] = {
-        'prefix': '[织梦字幕组]',
+        'folder': '[织梦字幕组][{NAME}][{EP_EN}集]',
+        'file': '[织梦字幕组][{NAME}][{EP_EN}集][{RESL}P][AVC][{LANG}]',
     }
     if not os.path.exists(conf_path):
         defaults[KEY_THR] = {

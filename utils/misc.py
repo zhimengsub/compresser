@@ -3,7 +3,7 @@ import os.path
 import re
 import time
 from datetime import timedelta
-
+from pycnnum import num2cn
 from zhconv import convert as convlang
 
 from utils.conf import Args
@@ -29,10 +29,10 @@ def parse_subtaskname(subtask_str: str) -> tuple[str, SubType, bool]:
     subtype = SubType(subname)
     return resl, subtype, noass
 
-def get_avail_outvidname(subfolder, subfoldername, resl, subtype, add_prefix_on_exists=True):
+def get_avail_outvidname(subfolder, anime_name, ep, resl, subtype, add_prefix_on_exists=True):
     vi = 1
     while True:
-        outvidname = get_outvidname(subfoldername, resl, subtype, vi)
+        outvidname = get_outvidname(anime_name, ep, resl, subtype, vi)
         outvid = os.path.join(subfolder, outvidname)
         if add_prefix_on_exists and os.path.exists(outvid):
             vi += 1
@@ -99,14 +99,29 @@ def parse_vidname(vidname):
     return ep
 
 def get_subfoldername(anime_name, ep):
-    pref = Args.OutPat['prefix']
-    res = pref + '[' + anime_name + '][' + '{:02d}'.format(ep) + '集]'
+    pat = Args.OutPat['folder']
+    values = {
+        'NAME': anime_name,
+        'EP_EN': '{:02d}'.format(ep),
+        'EP_ZH': num2cn(ep),
+    }
+    res = pat.format(**values)
+    matches = re.findall(r'\{.+?\}', res)
+    assert not matches, '不支持的folder命名规则: ' + ' '.join(matches)
+
     return res
 
-def get_outvidname(subfoldername, resl, subtype, vi):
-    pref = '' if vi <= 1 else f'[V{vi}]'
-    mid = '[AVC]'
-    res = pref + subfoldername + '[' + resl + 'P]' + mid + '[' + subtype.get_name() + ']' + Args.Suffxies.merged_output
+def get_outvidname(anime_name, ep, resl, subtype, vi):
+    pat = Args.OutPat['file']
+    values = {
+        'NAME': anime_name,
+        'EP_EN': '{:02d}'.format(ep),
+        'EP_ZH': num2cn(ep),
+        'RESL': resl,
+        'LANG': subtype.get_name(),
+    }
+    ver = '' if vi <= 1 else f'[V{vi}]'
+    res = ver + pat.format(**values) + Args.Suffxies.merged_output
     if subtype.is_TJ():
         res = convlang(res, 'zh-hant')
     return res

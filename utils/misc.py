@@ -44,12 +44,11 @@ def sec2hms(secs):
 
 
 # 获取输入
-def parse_workpath():
-    if len(sys.argv) < 2:
+def parse_workpath(workpath):
+    if not workpath:
         raise FileNotFoundError('不支持直接运行！请将待处理文件夹拖放到本程序上！')
-    elif not os.path.exists(sys.argv[1]) or not os.path.isdir(sys.argv[1]):
-        raise FileNotFoundError('待处理文件夹格式错误！输入为'+sys.argv[1])
-    workpath = sys.argv[1]
+    elif not os.path.exists(workpath) or not os.path.isdir(workpath):
+        raise FileNotFoundError('待处理文件夹格式错误！输入为'+workpath)
     # folder = os.path.basename(workpath)
     vid = ''
     assS = ''

@@ -29,5 +29,4 @@ TMP = os.path.join(BASE, 'tmp')
 os.makedirs(TMP, exist_ok=True)
 LOG = os.path.join(BASE, 'log')
 os.makedirs(LOG, exist_ok=True)
-CONF = os.path.join(BASE, 'conf.ini')
 

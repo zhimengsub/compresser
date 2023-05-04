@@ -16,8 +16,9 @@ from utils.misc import log, parse_workpath, parse_vidname, prompt_for_animefolde
     parse_subtaskname, log_process, has_img, organize_tasks, get_avail_outvidname, get_vs_tmp_path, get_script_tmp_path
 from utils.paths import TMP, Paths
 from utils.subtype import SubType
-#TODO 每个任务改不同的配置很麻烦，能否在全局设置的基础上，每个片单独设置压制脚本/参数
-VER = 'v2.0.8.001'
+from utils.sysargs import get_sysargs
+
+VER = 'v2.0.9'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -104,10 +105,12 @@ def playring():
 def main():
     global workpath, M4A_TMP
     print(DESCRIPTION)
+    sysargs = get_sysargs()
 
-    load_conf()
+    load_conf(sysargs.conf_path)
+
     ass_paths = {}  # type: dict[SubType, str]
-    workpath, invid, ass_paths[SubType.SJ], ass_paths[SubType.TJ] = parse_workpath()  # full path
+    workpath, invid, ass_paths[SubType.SJ], ass_paths[SubType.TJ] = parse_workpath(sysargs.work_path)  # full path
     if Paths.RING: print('\n使用提示音', Paths.RING.replace('/', '\\'))
     print('\n使用X264参数', Args.ARGSX264)
     print('\n使用QAAC参数', Args.ARGSQAAC)

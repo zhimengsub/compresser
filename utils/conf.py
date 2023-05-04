@@ -1,9 +1,9 @@
 import configparser
 import os.path
-
+from pathlib import Path
 from addict import Dict
 
-from utils.paths import CONF, BASE, BASE_TMP, Paths
+from utils.paths import BASE, BASE_TMP, Paths
 
 Args = Dict(
     TASKS=[],  # type: list[list[str]]
@@ -28,8 +28,10 @@ _TASK_NAMES = ['1080chs', '1080cht', '720chs', '720cht']
 conf = configparser.ConfigParser()
 
 
-def load_conf():
+def load_conf(conf_path):
     defaults = {}
+    if not os.path.isabs(conf_path):
+        conf_path = Path(BASE, conf_path).resolve().__str__()
 
     # default demo
     defaults[KEY_TOOLS] = {
@@ -62,20 +64,20 @@ def load_conf():
     defaults[KEY_OUTPAT] = {
         'prefix': '[织梦字幕组]',
     }
-    if not os.path.exists(CONF):
+    if not os.path.exists(conf_path):
         defaults[KEY_THR] = {
             'task1': '1080chs, 1080cht',
             'task2': '720chs, 720cht',
         }
         conf.read_dict(defaults)
 
-        with open(CONF, 'w', encoding='utf8') as f:
+        with open(conf_path, 'w', encoding='utf8') as f:
             conf.write(f)
-        raise FileNotFoundError('已生成配置文件 '+CONF+'\n\n请编辑后重新运行本程序！')
+        raise FileNotFoundError('已生成配置文件至 '+conf_path+'\n\n请编辑后重新运行本程序！')
     else:
         conf.read_dict(defaults)
-        conf.read(CONF, 'utf8')
-        with open(CONF, 'w', encoding='utf8') as f:
+        conf.read(conf_path, 'utf8')
+        with open(conf_path, 'w', encoding='utf8') as f:
             conf.write(f)
 
     assert_conf()
@@ -119,7 +121,7 @@ def load_conf():
         Args.OutPat.update(conf[KEY_OUTPAT])
 
     except KeyError as err:
-        raise AssertionError('配置文件结构不完整，请删除'+CONF+'后重新运行本程序！')
+        raise AssertionError('配置文件结构不完整，请删除'+conf_path+'后重新运行本程序！')
 
 def assert_conf():
     # assert config files

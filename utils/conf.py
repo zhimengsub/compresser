@@ -105,9 +105,9 @@ def load_conf():
 
         # KEY_THR
         for _, task in conf[KEY_THR].items():
-            joblist = task.split(',')
-            joblist = [j.strip() for j in joblist]
-            Args.TASKS.append(joblist)
+            subtasks = task.split(',')
+            subtasks = [s.strip() for s in subtasks]
+            Args.TASKS.append(subtasks)
 
         # KEY_TemplatePaths
         for j in conf[KEY_TemplatePaths].keys():

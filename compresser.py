@@ -13,11 +13,11 @@ from utils.conf import Args, load_conf
 from utils.consts import *
 from utils.logger import initFileLogger
 from utils.misc import log, parse_workpath, parse_vidname, prompt_for_animefolder, get_subfoldername, sec2hms, \
-    parse_jobname, log_process, has_img, organize_tasks, get_avail_outvidname, get_vs_tmp, get_script_tmp
+    parse_subtaskname, log_process, has_img, organize_tasks, get_avail_outvidname, get_vs_tmp_path, get_script_tmp_path
 from utils.paths import TMP, Paths
 from utils.subtype import SubType
 #TODO 每个任务改不同的配置很麻烦，能否在全局设置的基础上，每个片单独设置压制脚本/参数
-VER = 'v2.0.8'
+VER = 'v2.0.8.001'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -39,10 +39,11 @@ def proc_audio(invid, outaud, template, script_tmp, logger_file):
     log(cmdvspipe, '|', cmdqaac)
     logger_file.debug(cmdvspipe)
     vspipe = subprocess.Popen(cmdvspipe, stdout=PIPE, stderr=PIPE)
+    qaac = None
     try:
         qaac = subprocess.run(cmdqaac, stdin=vspipe.stdout, stdout=PIPE, stderr=PIPE)
     finally:
-        if logger_file:
+        if logger_file and qaac:
             logger_file.debug('')
             log_process(logger_file, cmdqaac, qaac)
     vspipe.stdout.close()
@@ -74,10 +75,11 @@ def proc_video(invid, inaud, resl, outvid, template, vs_tmp, script_tmp, prefix=
         log(cmdvspipe,'|',cmdx264, prefix=prefix)
         logger_file.debug(cmdvspipe)
         vspipe = subprocess.Popen(cmdvspipe, stdout=PIPE, stderr=PIPE)
+        x264 = None
         try:
             x264 = subprocess.run(cmdx264, stdin=vspipe.stdout, stdout=PIPE, stderr=PIPE)
         finally:
-            if logger_file:
+            if logger_file and x264:
                 logger_file.debug('')
                 log_process(logger_file, cmdx264, x264)
         vspipe.stdout.close()
@@ -87,10 +89,11 @@ def proc_video(invid, inaud, resl, outvid, template, vs_tmp, script_tmp, prefix=
     log('封装音频中...', prefix=prefix)
     cmdffmpeg = f'"{Paths.FFMPEG}" -y -i "{vs_tmp}" -i "{inaud}" -c:v copy -c:a copy -map 0:v:0 -map 1:a:0 "{outvid}"'
     log(cmdffmpeg, prefix=prefix)
+    ffmpeg = None
     try:
         ffmpeg = subprocess.run(cmdffmpeg, check=True, stdout=PIPE, stderr=PIPE)
     finally:
-        if logger_file:
+        if logger_file and ffmpeg:
             logger_file.debug('')
             log_process(logger_file, cmdffmpeg, ffmpeg)
 
@@ -103,8 +106,8 @@ def main():
     print(DESCRIPTION)
 
     load_conf()
-    asses = {}  # type: dict[SubType, str]
-    workpath, invid, asses[SubType.SJ], asses[SubType.TJ] = parse_workpath()  # full path
+    ass_paths = {}  # type: dict[SubType, str]
+    workpath, invid, ass_paths[SubType.SJ], ass_paths[SubType.TJ] = parse_workpath()  # full path
     if Paths.RING: print('\n使用提示音', Paths.RING.replace('/', '\\'))
     print('\n使用X264参数', Args.ARGSX264)
     print('\n使用QAAC参数', Args.ARGSQAAC)
@@ -113,11 +116,11 @@ def main():
     print('工作目录：', Paths.ROOT_FOLDER)
 
     # 是否不填加字幕（需要二压）
-    NO_ASS_SJ = has_img(asses[SubType.SJ])
-    NO_ASS_TJ = has_img(asses[SubType.TJ])
-    isolated_noass_jobs = []
+    NO_ASS_SJ = has_img(ass_paths[SubType.SJ])
+    NO_ASS_TJ = has_img(ass_paths[SubType.TJ])
+    isolated_noass_subtasks = []
     if NO_ASS_SJ or NO_ASS_TJ:
-        Args.TASKS, isolated_noass_jobs = organize_tasks(Args.TASKS, NO_ASS_SJ, NO_ASS_TJ)
+        Args.TASKS, isolated_noass_subtasks = organize_tasks(Args.TASKS, NO_ASS_SJ, NO_ASS_TJ)
         print('压制任务：（需要二压，已调整压制任务顺序！）')
     else:
         print('压制任务：')
@@ -131,7 +134,7 @@ def main():
     invidname_noext = os.path.splitext(os.path.basename(invidname))[0]
 
     ep = parse_vidname(invidname)
-    print('\n输入文件夹解析结果：', '\n视频：', os.path.basename(invid), '\n简日字幕：', os.path.basename(asses[SubType.SJ]), '\n繁日字幕：', os.path.basename(asses[SubType.TJ]), '\n集数：', ep)
+    print('\n输入文件夹解析结果：', '\n视频：', os.path.basename(invid), '\n简日字幕：', os.path.basename(ass_paths[SubType.SJ]), '\n繁日字幕：', os.path.basename(ass_paths[SubType.TJ]), '\n集数：', ep)
 
     anime_name, anime_folder = prompt_for_animefolder()
 
@@ -145,27 +148,24 @@ def main():
 
     task_runners = []
     for task in Args.TASKS:
-        jobs = []
-        for j in task:
-            resl, subtype, noass = parse_jobname(j)
-            jobname = f'{resl}{subtype.value}'
-            tmpprefix = f'{invidname_noext}_{jobname}'
+        subtasks = []
+        for s in task:
+            resl, subtype, noass = parse_subtaskname(s)
+
             if noass:
                 # 需要二压
                 # 720的invid应该改成1080的outvid
                 outvid_1080 = get_avail_outvidname(subfolder, subfoldername, '1080', subtype, add_prefix_on_exists=False)
                 # 检查是否存在对应的1080任务，或存在对应的1080成片
-                if j in isolated_noass_jobs and not os.path.exists(outvid_1080):
-                    raise AssertionError('错误！需要二压，但' + j + '任务不存在1080版任务或成片！')
+                if s in isolated_noass_subtasks and not os.path.exists(outvid_1080):
+                    raise AssertionError('错误！需要二压，但' + s + '任务不存在1080版任务或成片！')
 
-                job = Job(jobname, tmpprefix, outvid_1080, aud, resl, subtype, subfolder, subfoldername, ass=None)
+                subtask = Subtask(s, invidname_noext, outvid_1080, aud, subfolder, subfoldername, asssrc_path=None)
             else:
-                ass = asses[subtype]
-                asstmp = os.path.join(TMP, f'{tmpprefix}_ass.ass')
-                shutil.copyfile(ass, asstmp)
-                job = Job(jobname, tmpprefix, invid, aud, resl, subtype, subfolder, subfoldername, ass=asstmp)
-            jobs.append(job)
-        task_runners.append(TaskRunner(jobs))
+                asssrc_path = ass_paths[subtype]
+                subtask = Subtask(s, invidname_noext, invid, aud, subfolder, subfoldername, asssrc_path)
+            subtasks.append(subtask)
+        task_runners.append(Task(subtasks))
 
     if not (SKIPAUD and os.path.exists(aud)):
         log('提取音频并转码为m4a...')
@@ -173,7 +173,7 @@ def main():
         with open(Paths.TemplatePaths.audio, 'r', encoding='utf8') as f:
             template_audio = f.read()
         tmpprefix = f'{invidname_noext}_audio'
-        script_audio_tmp = get_script_tmp(tmpprefix)
+        script_audio_tmp = get_script_tmp_path(tmpprefix)
         proc_audio(invid, aud, template_audio, script_audio_tmp, logger_file)
 
     st = time.time()
@@ -182,38 +182,56 @@ def main():
     log('全部结束，共耗时', sec2hms((time.time() - st)))
 
 
-class Job:
-    def __init__(self, jobname, tmpprefix, invid, aud, resl:str, subtype: SubType, subfolder, subfoldername, ass=None):
+class Subtask:
+    def __init__(self, subtask_str, invidname_noext, invid, aud, subfolder, subfoldername, asssrc_path=None):
+        resl, subtype, noass = parse_subtaskname(subtask_str)
+        subtaskname = f'{resl}{subtype.value}'  # 1080chs
+        prefix_tmp = f'{invidname_noext}_{subtaskname}'
+
         self.invid = invid
         self.aud = aud
-        self.ass = ass
+
+        self.asstmp_path = None
+        if not noass:
+            asstmp_path = os.path.join(TMP, f'{prefix_tmp}_ass.ass')
+            shutil.copyfile(asssrc_path, asstmp_path)
+            self.asstmp_path = asstmp_path
+
         self.resl = resl
         self.subtype = subtype
         self.outvid = get_avail_outvidname(subfolder, subfoldername, resl, subtype, add_prefix_on_exists=True)
-        self.vs_tmp = get_vs_tmp(tmpprefix)
-        self.script_tmp = get_script_tmp(tmpprefix)
-        self.prefix = jobname + ':'
-        with open(Paths.TemplatePaths[jobname], 'r', encoding='utf8') as f:
+        self.vs_tmp_path = get_vs_tmp_path(prefix_tmp)
+        self.script_tmp_path = get_script_tmp_path(prefix_tmp)
+        self.prefix = subtaskname + ':'
+        with open(Paths.TemplatePaths[subtaskname], 'r', encoding='utf8') as f:
             self.template = f.read()
-        self.logger_file = initFileLogger(jobname)
+        self.logger_file = initFileLogger(subtaskname)
 
     def run(self):
         st = time.time()
         log('生成' + self.subtype.simp_name() + self.resl + 'p...', prefix=self.prefix)
-        proc_video(self.invid, self.aud, self.resl, self.outvid, self.template, self.vs_tmp, self.script_tmp,
-                   prefix=self.prefix, logger_file=self.logger_file, ass=self.ass)
+        proc_video(self.invid,
+                   self.aud,
+                   self.resl,
+                   self.outvid,
+                   self.template,
+                   self.vs_tmp_path,
+                   self.script_tmp_path,
+                   prefix=self.prefix,
+                   logger_file=self.logger_file,
+                   ass=self.asstmp_path)
         log('已输出至', self.outvid, prefix=self.prefix)
         log('耗时', sec2hms((time.time() - st)), prefix=self.prefix)
 
 
-class TaskRunner(threading.Thread):
-    def __init__(self, tasks: list[Job]):
-        self.tasks = tasks
-        super(TaskRunner, self).__init__()
+class Task(threading.Thread):
+    def __init__(self, subtasks: list[Subtask]):
+        self.subtasks = subtasks
+        super(Task, self).__init__()
 
     def run(self) -> None:
-        for task in self.tasks:
-            task.run()
+        for subtask in self.subtasks:
+            subtask.run()
 
 
 if __name__ == '__main__':

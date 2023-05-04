@@ -20,12 +20,12 @@ def log(*args, prefix='', **kwargs):
     else:
         print(t, *args, **kwargs)
 
-def parse_jobname(j: str) -> tuple[str, SubType, bool]:
-    noass = '_noass' in j
+def parse_subtaskname(subtask_str: str) -> tuple[str, SubType, bool]:
+    noass = '_noass' in subtask_str
     if noass:
-        resl, subname = j[:-9], j[-9:]
+        resl, subname = subtask_str[:-9], subtask_str[-9:]
     else:
-        resl, subname = j[:-3], j[-3:]
+        resl, subname = subtask_str[:-3], subtask_str[-3:]
     subtype = SubType(subname)
     return resl, subtype, noass
 
@@ -113,10 +113,10 @@ def get_outvidname(subfoldername, resl, subtype, vi):
     return res
 
 
-def get_vs_tmp(tmpprefix):
+def get_vs_tmp_path(tmpprefix):
     return os.path.join(TMP, f'{tmpprefix}_vs' + Args.Suffxies.x264_output)
 
-def get_script_tmp(tmpprefix):
+def get_script_tmp_path(tmpprefix):
     return os.path.join(TMP, f'{tmpprefix}_script.vpy')
 
 def log_pipe(logger: logging.Logger, cmd, pipe):
@@ -154,35 +154,35 @@ def organize_tasks(tasks: list[list[str]], NO_ASS_SJ: bool, NO_ASS_TJ: bool) -> 
     [ ['1080chs', '720cht'],['1080cht','720chs'] ] -> [ ['1080chs', '720chs_noass', '1080cht','720cht_noass'] ]
     [ ['1080chs'] , ['1080cht'], ['720chs'], ['720cht'] ] -> [ ['1080chs', '720chs_noass'], ['1080cht','720cht_noass'] ]
     :param NO_ASS_SJ: 不需要ass文件（需要二压）
-    :returns: [out_tasks, isolated_noass_jobs: 没有对应1080版的720二压任务]
+    :returns: [out_tasks, isolated_noass_subtasks: 没有对应1080版的720二压任务]
     '''
-    noass_jobs = []  # 需要二压的任务
+    noass_subtasks = []  # 需要二压的任务
     tasks_normal = []
     # 取出720版，如果有对应的1080版则插入其后方
-    # filter out 720 jobs if NO ASS
+    # filter out 720 subtasks if NO ASS
     for task in tasks:
         task_normal = []
-        for j in task:
-            if j.startswith('720') and (j.endswith('chs') and NO_ASS_SJ or j.endswith('cht') and NO_ASS_TJ):
-                noass_jobs.append(j + '_noass')
+        for s in task:
+            if s.startswith('720') and (s.endswith('chs') and NO_ASS_SJ or s.endswith('cht') and NO_ASS_TJ):
+                noass_subtasks.append(s + '_noass')
             else:
-                task_normal.append(j)
+                task_normal.append(s)
         if task_normal:
             tasks_normal.append(task_normal)
-    # insert 720 jobs back after corresponding 1080/normal job
+    # insert 720 subtasks back after corresponding 1080/normal subtask
     out_tasks = []
     for task_normal in tasks_normal:
         out_task = task_normal.copy()
-        for j_normal in task_normal:
-            if j_normal.startswith('1080'):
-                j_720_noass = j_normal.replace('1080', '720') + '_noass'
-                if j_720_noass in noass_jobs:
-                    out_task.append(j_720_noass)
-                    noass_jobs.remove(j_720_noass)
+        for subtask_normal in task_normal:
+            if subtask_normal.startswith('1080'):
+                s_720_noass = subtask_normal.replace('1080', '720') + '_noass'
+                if s_720_noass in noass_subtasks:
+                    out_task.append(s_720_noass)
+                    noass_subtasks.remove(s_720_noass)
         if out_task:
             out_tasks.append(out_task)
     # 没有对应1080版的720二压任务作为单独的tasks加入，后续再判断是否需要abort
-    if noass_jobs:
-        out_tasks.append([j_720_noass for j_720_noass in noass_jobs])
+    if noass_subtasks:
+        out_tasks.append([s_720_noass for s_720_noass in noass_subtasks])
 
-    return out_tasks, noass_jobs
+    return out_tasks, noass_subtasks

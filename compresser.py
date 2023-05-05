@@ -19,7 +19,7 @@ from utils.paths import TMP, Paths
 from utils.subtype import SubType
 from utils.sysargs import get_sysargs
 
-VER = 'v2.0.10'
+VER = 'v2.0.10.001'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -149,6 +149,7 @@ def main():
     subfolder = os.path.join(anime_folder, subfoldername)
     os.makedirs(subfolder, exist_ok=True)
     print('\n成片将保存至')
+    print(subfolder)
 
     M4A_TMP = os.path.join(TMP, f'{invidname_noext}_m4a.m4a')
     aud = M4A_TMP
@@ -162,7 +163,7 @@ def main():
             if noass:
                 # 需要二压
                 # 720的输入应该改成1080的输出
-                outvid_1080 = get_avail_outvidname(subfolder, anime_name, ep, '1080', subtype, add_prefix_on_exists=False)
+                outvid_1080, _ = get_avail_outvidname(subfolder, anime_name, ep, '1080', subtype, add_prefix_on_exists=False)
                 # 检查是否存在对应的1080任务，或存在对应的1080成片
                 if s in isolated_noass_subtasks and not os.path.exists(outvid_1080):
                     raise AssertionError('错误！需要二压，但' + s + '任务不存在1080版任务或成片！')
@@ -171,7 +172,7 @@ def main():
             else:
                 asssrc_path = ass_paths[subtype]
                 subtask = Subtask(s, invidname_noext, invid, aud, subfolder, anime_name, ep, asssrc_path)
-            print(subtask.outvid)
+            print(subtask.outvidname)
             subtasks.append(subtask)
         task_runners.append(Task(subtasks))
 
@@ -207,7 +208,7 @@ class Subtask:
 
         self.resl = resl
         self.subtype = subtype
-        self.outvid = get_avail_outvidname(subfolder, anime_name, ep, resl, subtype, add_prefix_on_exists=True)
+        self.outvid, self.outvidname = get_avail_outvidname(subfolder, anime_name, ep, resl, subtype, add_prefix_on_exists=True)
         self.vs_tmp_path = get_vs_tmp_path(prefix_tmp)
         self.script_tmp_path = get_script_tmp_path(prefix_tmp)
         self.prefix = subtaskname + ':'

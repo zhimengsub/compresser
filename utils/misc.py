@@ -37,7 +37,7 @@ def get_avail_outvidname(subfolder, anime_name, ep, resl, subtype, add_prefix_on
         if add_prefix_on_exists and os.path.exists(outvid):
             vi += 1
             continue
-        return outvid
+        return outvid, outvidname
 
 def sec2hms(secs):
     return '{:0>8}'.format(str(timedelta(seconds=int(secs))))

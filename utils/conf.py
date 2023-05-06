@@ -28,7 +28,7 @@ _TASK_NAMES = ['1080chs', '1080cht', '720chs', '720cht']
 conf = configparser.ConfigParser()
 
 
-def load_conf(conf_path):
+def load_conf(conf_path: str):
     defaults = {}
 
     # default demo

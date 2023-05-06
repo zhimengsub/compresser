@@ -19,7 +19,7 @@ from utils.paths import TMP, Paths
 from utils.subtype import SubType
 from utils.sysargs import get_sysargs
 
-VER = 'v2.0.10.001'
+VER = 'v2.0.10.002'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -108,7 +108,7 @@ def main():
     print(DESCRIPTION)
     sysargs = get_sysargs()
 
-    conf_path = Path(sysargs.conf_path).absolute()
+    conf_path = str(Path(sysargs.conf_path).absolute())
     print('\n配置文件路径：', conf_path)
 
     load_conf(conf_path)

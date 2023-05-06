@@ -1,10 +1,10 @@
 @echo off
 cd /d %~dp0
 
-IF "%1"=="" (
+IF %1=="" (
   SET WORKPATH=""
 ) ELSE (
-  SET WORKPATH="%1"
+  SET WORKPATH=%1
 )
 
 @REM ”√∑®£∫

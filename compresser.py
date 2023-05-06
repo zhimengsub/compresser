@@ -19,7 +19,7 @@ from utils.paths import TMP, Paths
 from utils.subtype import SubType
 from utils.sysargs import get_sysargs
 
-VER = 'v2.0.10.002'
+VER = 'v2.0.10.003'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -103,7 +103,13 @@ def playring():
     if os.path.exists(Paths.RING):
         playsound(Paths.RING)
 
-def main():
+def remove_tmps(tmp_fullpaths: list[str]):
+    for tmp in tmp_fullpaths:
+        if os.path.exists(tmp):
+            os.remove(tmp)
+
+
+def main(tmp_fullpaths):
     global workpath, M4A_TMP
     print(DESCRIPTION)
     sysargs = get_sysargs()
@@ -152,7 +158,6 @@ def main():
     print(subfolder)
 
     M4A_TMP = os.path.join(TMP, f'{invidname_noext}_m4a.m4a')
-    aud = M4A_TMP
 
     task_runners = []
     for task in Args.TASKS:
@@ -168,28 +173,31 @@ def main():
                 if s in isolated_noass_subtasks and not os.path.exists(outvid_1080):
                     raise AssertionError('错误！需要二压，但' + s + '任务不存在1080版任务或成片！')
 
-                subtask = Subtask(s, invidname_noext, outvid_1080, aud, subfolder, anime_name, ep, asssrc_path=None)
+                subtask = Subtask(s, invidname_noext, outvid_1080, M4A_TMP, subfolder, anime_name, ep, asssrc_path=None)
             else:
                 asssrc_path = ass_paths[subtype]
-                subtask = Subtask(s, invidname_noext, invid, aud, subfolder, anime_name, ep, asssrc_path)
+                subtask = Subtask(s, invidname_noext, invid, M4A_TMP, subfolder, anime_name, ep, asssrc_path)
             print(subtask.outvidname)
+            tmp_fullpaths.extend(subtask.tmp_fullpaths)
             subtasks.append(subtask)
         task_runners.append(Task(subtasks))
 
-    if not (SKIPAUD and os.path.exists(aud)):
+    if not (SKIPAUD and os.path.exists(M4A_TMP)):
         log('提取音频并转码为m4a...')
         logger_file = initFileLogger('audio')
         with open(Paths.TemplatePaths.audio, 'r', encoding='utf8') as f:
             template_audio = f.read()
         tmpprefix = f'{invidname_noext}_audio'
         script_audio_tmp = get_script_tmp_path(tmpprefix)
-        proc_audio(invid, aud, template_audio, script_audio_tmp, logger_file)
+        proc_audio(invid, M4A_TMP, template_audio, script_audio_tmp, logger_file)
+        tmp_fullpaths.extend([M4A_TMP, script_audio_tmp])
 
     st = time.time()
     [task_runner.start() for task_runner in task_runners]
     [task_runner.join() for task_runner in task_runners]
     log('全部结束，共耗时', sec2hms((time.time() - st)))
 
+    return tmp_fullpaths
 
 class Subtask:
     def __init__(self, subtask_str, invidname_noext, invid, aud, subfolder, anime_name, ep, asssrc_path=None):
@@ -215,6 +223,10 @@ class Subtask:
         with open(Paths.TemplatePaths[subtaskname], 'r', encoding='utf8') as f:
             self.template = f.read()
         self.logger_file = initFileLogger(subtaskname)
+
+    @property
+    def tmp_fullpaths(self):
+        return [self.asstmp_path, self.vs_tmp_path, self.script_tmp_path]
 
     def run(self):
         st = time.time()
@@ -244,8 +256,9 @@ class Task(threading.Thread):
 
 
 if __name__ == '__main__':
+    tmp_fullpaths = []  # record tmp files for removal
     try:
-        main()
+        main(tmp_fullpaths)
     except CalledProcessError as err:
         if DEBUGMODE:
             traceback.print_exc()
@@ -263,9 +276,7 @@ if __name__ == '__main__':
         playring()
     finally:
         if PURGETMP:
-            for name in os.listdir(TMP):
-                os.remove(os.path.join(TMP, name))
-            os.removedirs(TMP)
+            remove_tmps(tmp_fullpaths)
 
         if PAUSE:
             print()

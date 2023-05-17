@@ -19,7 +19,7 @@ from utils.paths import TMP, Paths
 from utils.subtype import SubType
 from utils.sysargs import get_sysargs
 
-VER = 'v2.0.10.003'
+VER = 'v2.0.11'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -148,6 +148,9 @@ def main(tmp_fullpaths):
 
     ep = parse_vidname(invidname)
     print('\n输入文件夹解析结果：', '\n视频：', os.path.basename(invid), '\n简日字幕：', os.path.basename(ass_paths[SubType.SJ]) or '无', '\n繁日字幕：', os.path.basename(ass_paths[SubType.TJ]) or '无', '\n集数：', ep)
+
+    print('\n成片文件夹命名格式：', '\n' + Args.OutPat['folder'])
+    print('\n成片文件命名格式：', '\n' + Args.OutPat['file'])
 
     anime_name, anime_folder = prompt_for_animefolder()
 

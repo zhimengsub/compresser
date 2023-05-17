@@ -119,9 +119,10 @@ def get_outvidname(anime_name, ep, resl, subtype, vi):
         'EP_ZH': num2cn(ep),
         'RESL': resl,
         'LANG': subtype.get_name(),
+        'VER': f'V{vi}'
     }
-    ver = '' if vi <= 1 else f'[V{vi}]'
-    res = ver + pat.format(**values) + Args.Suffxies.merged_output
+    res = pat.format(**values) + Args.Suffxies.merged_output  # type: str
+    res = res.replace('[V1]', '').replace('V1', '')
     if subtype.is_TJ():
         res = convlang(res, 'zh-hant')
     return res

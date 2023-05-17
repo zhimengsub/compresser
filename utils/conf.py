@@ -61,7 +61,7 @@ def load_conf(conf_path: str):
     }
     defaults[KEY_OUTPAT] = {
         'folder': '[织梦字幕组][{NAME}][{EP_EN}集]',
-        'file': '[织梦字幕组][{NAME}][{EP_EN}集][{RESL}P][AVC][{LANG}]',
+        'file': '[织梦字幕组][{NAME}][{EP_EN}集][{RESL}P][AVC][{LANG}][{VER}]',
     }
     if not os.path.exists(conf_path):
         defaults[KEY_THR] = {

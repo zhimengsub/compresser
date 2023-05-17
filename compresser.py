@@ -146,11 +146,11 @@ def main(tmp_fullpaths):
     invidname = os.path.basename(invid)
     invidname_noext = os.path.splitext(os.path.basename(invidname))[0]
 
-    ep = parse_vidname(invidname)
-    print('\n输入文件夹解析结果：', '\n视频：', os.path.basename(invid), '\n简日字幕：', os.path.basename(ass_paths[SubType.SJ]) or '无', '\n繁日字幕：', os.path.basename(ass_paths[SubType.TJ]) or '无', '\n集数：', ep)
-
     print('\n成片文件夹命名格式：', '\n' + Args.OutPat['folder'])
     print('\n成片文件命名格式：', '\n' + Args.OutPat['file'])
+
+    ep = parse_vidname(invidname)
+    print('\n输入文件夹解析结果：', '\n视频：', os.path.basename(invid), '\n简日字幕：', os.path.basename(ass_paths[SubType.SJ]) or '无', '\n繁日字幕：', os.path.basename(ass_paths[SubType.TJ]) or '无', '\n集数：', ep)
 
     anime_name, anime_folder = prompt_for_animefolder()
 

@@ -121,6 +121,8 @@ def get_outvidname(anime_name, ep, resl, subtype, vi):
         'LANG': subtype.get_name(),
         'VER': f'V{vi}'
     }
+    if '{VER}' not in pat:
+        pat = '[{VER}]' + pat
     res = pat.format(**values) + Args.Suffxies.merged_output  # type: str
     res = res.replace('[V1]', '').replace('V1', '')
     if subtype.is_TJ():

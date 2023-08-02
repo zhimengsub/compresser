@@ -12,14 +12,16 @@ from playsound import playsound, PlaysoundException
 
 from utils.conf import Args, load_conf
 from utils.consts import *
+from utils.fonts import FontChecker
 from utils.logger import initFileLogger
 from utils.misc import log, parse_workpath, parse_vidname, prompt_for_animefolder, get_subfoldername, sec2hms, \
-    parse_subtaskname, log_process, has_img, organize_tasks, get_avail_outvidname, get_vs_tmp_path, get_script_tmp_path
+    parse_subtaskname, log_process, organize_tasks, get_avail_outvidname, get_vs_tmp_path, get_script_tmp_path
+from utils.assfile import has_img, check_font_avail
 from utils.paths import TMP, Paths
 from utils.subtype import SubType
 from utils.sysargs import get_sysargs
 
-VER = 'v2.0.11'
+VER = 'v2.0.12'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -151,6 +153,17 @@ def main(tmp_fullpaths):
 
     ep = parse_vidname(invidname)
     print('\n输入文件夹解析结果：', '\n视频：', os.path.basename(invid), '\n简日字幕：', os.path.basename(ass_paths[SubType.SJ]) or '无', '\n繁日字幕：', os.path.basename(ass_paths[SubType.TJ]) or '无', '\n集数：', ep)
+
+    print('\n字体检查结果：')
+    font_checker = FontChecker()
+    failed_fontnames = check_font_avail(ass_paths[SubType.SJ], font_checker)
+    failed_fontnames2 = check_font_avail(ass_paths[SubType.TJ], font_checker)
+    failed_fontnames = set(failed_fontnames).union(set(failed_fontnames2))
+    if failed_fontnames:
+        print('以下字体可能未安装：')
+        print('\n'.join(failed_fontnames))
+    else:
+        print('通过')
 
     anime_name, anime_folder = prompt_for_animefolder()
 

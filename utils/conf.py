@@ -36,7 +36,7 @@ def load_conf(conf_path: str):
         'ffmpeg': r"D:\Software\ffmpeg\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe",
         'VSPipe': r"D:\Software\VapourSynth\VapourSynth64Portable\VapourSynth64\VSPipe.exe",
         'x264': r"D:\Software\VapourSynth\VapourSynth64Portable\bin\x264.exe",
-        'qaac': r"D:\Software\MeGUI\MeGUI-2913-32\tools\qaac\qaac.exe",
+        'qaac': r"D:\Software\MeGUI\MeGUI-2944-32\tools\qaac\qaac.exe",
     }
     defaults[KEY_PATHS] = {
         'root_folder': r"D:\animes",

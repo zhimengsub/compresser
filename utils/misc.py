@@ -155,15 +155,6 @@ def log_process(logger, cmd, proc):
     logger.debug('stderr:')
     logger.debug(proc.stderr.decode('utf8').strip())
 
-# 是否需要二压
-def has_img(ass) -> bool:
-    if not ass:
-        return False
-    with open(ass, 'r', encoding='utf_8_sig') as f:
-        while l:= f.readline():
-            if re.search(r'\\\dimg', l):
-                return True
-    return False
 
 def organize_tasks(tasks: list[list[str]], NO_ASS_SJ: bool, NO_ASS_TJ: bool) -> (list[list[str]], list[str]):
     '''tests:

@@ -21,7 +21,7 @@ from utils.paths import TMP, Paths
 from utils.subtype import SubType
 from utils.sysargs import get_sysargs
 
-VER = 'v2.0.12'
+VER = 'v2.0.13'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -30,7 +30,7 @@ DESCRIPTION = '*****************************************************************
 
 
 # 音频处理
-def proc_audio(invid, outaud, template, script_tmp, logger_file):
+def proc_audio(invid, outaud, template, script_tmp, logger_file, debug=False):
     # 生成y音频用vpy
     script = gen_audio_script(template, invid)
     with open(script_tmp, 'w', encoding='utf8') as f:
@@ -45,9 +45,12 @@ def proc_audio(invid, outaud, template, script_tmp, logger_file):
     vspipe = subprocess.Popen(cmdvspipe, stdout=PIPE, stderr=PIPE)
     qaac = None
     try:
-        qaac = subprocess.run(cmdqaac, stdin=vspipe.stdout, stdout=PIPE, stderr=PIPE)
+        if debug:
+            qaac = subprocess.run(cmdqaac, stdin=vspipe.stdout)
+        else:
+            qaac = subprocess.run(cmdqaac, stdin=vspipe.stdout, stdout=PIPE, stderr=PIPE)
     finally:
-        if logger_file and qaac:
+        if logger_file and qaac and not debug:
             logger_file.debug('')
             log_process(logger_file, cmdqaac, qaac)
     vspipe.stdout.close()
@@ -64,7 +67,7 @@ def gen_script(template, src, ass, resl):
     h = '1080' if resl == '1080' else '720'
     return template.format(src=src, ass=ass, w=w, h=h)
 
-def proc_video(invid, inaud, resl, outvid, template, vs_tmp, script_tmp, prefix='', logger_file:Logger=None, ass=None):
+def proc_video(invid, inaud, resl, outvid, template, vs_tmp, script_tmp, prefix='', logger_file:Logger=None, ass=None, debug=False):
     if not (SKIPVSTMP and os.path.exists(vs_tmp)):
         # 生成vpy
         script = gen_script(template, invid, ass, resl)
@@ -81,9 +84,12 @@ def proc_video(invid, inaud, resl, outvid, template, vs_tmp, script_tmp, prefix=
         vspipe = subprocess.Popen(cmdvspipe, stdout=PIPE, stderr=PIPE)
         x264 = None
         try:
-            x264 = subprocess.run(cmdx264, stdin=vspipe.stdout, stdout=PIPE, stderr=PIPE)
+            if debug:
+                x264 = subprocess.run(cmdx264, stdin=vspipe.stdout)
+            else:
+                x264 = subprocess.run(cmdx264, stdin=vspipe.stdout, stdout=PIPE, stderr=PIPE)
         finally:
-            if logger_file and x264:
+            if logger_file and x264 and not debug:
                 logger_file.debug('')
                 log_process(logger_file, cmdx264, x264)
         vspipe.stdout.close()
@@ -95,9 +101,12 @@ def proc_video(invid, inaud, resl, outvid, template, vs_tmp, script_tmp, prefix=
     log(cmdffmpeg, prefix=prefix)
     ffmpeg = None
     try:
-        ffmpeg = subprocess.run(cmdffmpeg, check=True, stdout=PIPE, stderr=PIPE)
+        if debug:
+            ffmpeg = subprocess.run(cmdffmpeg, check=True)
+        else:
+            ffmpeg = subprocess.run(cmdffmpeg, check=True, stdout=PIPE, stderr=PIPE)
     finally:
-        if logger_file and ffmpeg:
+        if logger_file and ffmpeg and not debug:
             logger_file.debug('')
             log_process(logger_file, cmdffmpeg, ffmpeg)
 
@@ -112,10 +121,10 @@ def remove_tmps(tmp_fullpaths: list[str]):
 
 
 def main(tmp_fullpaths):
-    global workpath, M4A_TMP
+    global workpath, M4A_TMP, sysargs
     print(DESCRIPTION)
     sysargs = get_sysargs()
-
+    
     conf_path = str(Path(sysargs.conf_path).absolute())
     print('\n配置文件路径：', conf_path)
 
@@ -189,10 +198,10 @@ def main(tmp_fullpaths):
                 if s in isolated_noass_subtasks and not os.path.exists(outvid_1080):
                     raise AssertionError('错误！需要二压，但' + s + '任务不存在1080版任务或成片！')
 
-                subtask = Subtask(s, invidname_noext, outvid_1080, M4A_TMP, subfolder, anime_name, ep, asssrc_path=None)
+                subtask = Subtask(s, invidname_noext, outvid_1080, M4A_TMP, subfolder, anime_name, ep, asssrc_path=None, debug=sysargs.debug)
             else:
                 asssrc_path = ass_paths[subtype]
-                subtask = Subtask(s, invidname_noext, invid, M4A_TMP, subfolder, anime_name, ep, asssrc_path)
+                subtask = Subtask(s, invidname_noext, invid, M4A_TMP, subfolder, anime_name, ep, asssrc_path, debug=sysargs.debug)
             print(subtask.outvidname)
             tmp_fullpaths.extend(subtask.tmp_fullpaths)
             subtasks.append(subtask)
@@ -205,7 +214,7 @@ def main(tmp_fullpaths):
             template_audio = f.read()
         tmpprefix = f'{invidname_noext}_audio'
         script_audio_tmp = get_script_tmp_path(tmpprefix)
-        proc_audio(invid, M4A_TMP, template_audio, script_audio_tmp, logger_file)
+        proc_audio(invid, M4A_TMP, template_audio, script_audio_tmp, logger_file, debug=sysargs.debug)
         tmp_fullpaths.extend([M4A_TMP, script_audio_tmp])
 
     st = time.time()
@@ -216,7 +225,7 @@ def main(tmp_fullpaths):
     return tmp_fullpaths
 
 class Subtask:
-    def __init__(self, subtask_str, invidname_noext, invid, aud, subfolder, anime_name, ep, asssrc_path=None):
+    def __init__(self, subtask_str, invidname_noext, invid, aud, subfolder, anime_name, ep, asssrc_path=None, debug=False):
         resl, subtype, noass = parse_subtaskname(subtask_str)
         subtaskname = f'{resl}{subtype.value}'  # 1080chs
         prefix_tmp = f'{invidname_noext}_{subtaskname}'
@@ -239,6 +248,7 @@ class Subtask:
         with open(Paths.TemplatePaths[subtaskname], 'r', encoding='utf8') as f:
             self.template = f.read()
         self.logger_file = initFileLogger(subtaskname)
+        self.debug = debug
 
     @property
     def tmp_fullpaths(self):
@@ -247,16 +257,19 @@ class Subtask:
     def run(self):
         st = time.time()
         log('生成' + self.subtype.simp_name() + self.resl + 'p...', prefix=self.prefix)
-        proc_video(self.invid,
-                   self.aud,
-                   self.resl,
-                   self.outvid,
-                   self.template,
-                   self.vs_tmp_path,
-                   self.script_tmp_path,
-                   prefix=self.prefix,
-                   logger_file=self.logger_file,
-                   ass=self.asstmp_path)
+        proc_video(
+            self.invid,
+            self.aud,
+            self.resl,
+            self.outvid,
+            self.template,
+            self.vs_tmp_path,
+            self.script_tmp_path,
+            prefix=self.prefix,
+            logger_file=self.logger_file,
+            ass=self.asstmp_path,
+            debug=self.debug
+        )
         log('已输出至', self.outvid, prefix=self.prefix)
         log('耗时', sec2hms((time.time() - st)), prefix=self.prefix)
 
@@ -272,12 +285,17 @@ class Task(threading.Thread):
 
 
 if __name__ == '__main__':
+    global PURGETMP, sysargs
     tmp_fullpaths = []  # record tmp files for removal
     try:
         main(tmp_fullpaths)
     except CalledProcessError as err:
+        PURGETMP = False
         if DEBUGMODE:
             traceback.print_exc()
+        elif sysargs.debug:
+            traceback.print_exc()
+            print('\n外部程序执行报错！请检查报错信息，或将问题提交到 https://github.com/zhimengsub/compresser/issues')
         else:
             print(err.stderr.decode('utf8'))
             print('\n外部程序执行报错！请检查报错信息，或将问题提交到 https://github.com/zhimengsub/compresser/issues')
@@ -285,6 +303,7 @@ if __name__ == '__main__':
         print()
         print(err)
     except Exception as err:
+        PURGETMP = False
         traceback.print_exc()
         print('\n发生了未知错误！请将上面的报错信息提交到 https://github.com/zhimengsub/compresser/issues')
     else:

@@ -60,8 +60,8 @@ def load_conf(conf_path: str):
         'merged_output': '.mp4',
     }
     defaults[KEY_OUTPAT] = {
-        'folder': '[织梦字幕组][{NAME}][{EP_EN}集]',
-        'file': '[织梦字幕组][{NAME}][{EP_EN}集][{RESL}P][AVC][{LANG}][{VER}]',
+        'folder': '[Yumezukuri] {NAME} [{EP_EN}]',
+        'file': '[Yumezukuri] {NAME} [{EP_EN}] [AVC-8bit {RESL}P] [{LANG_EN}] [{VER}]',
     }
     if not os.path.exists(conf_path):
         defaults[KEY_THR] = {

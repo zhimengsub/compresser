@@ -18,5 +18,11 @@ class SubType(enum.Enum):
         if self.name.startswith('TJ'):
             return '繁日双语'
 
+    def get_eng_name(self):
+        if self.name.startswith('SJ'):
+            return 'CHS＆JPN'
+        if self.name.startswith('TJ'):
+            return 'CHT＆JPN'
+
     def simp_name(self):
         return self.get_name()[:2]

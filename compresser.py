@@ -6,11 +6,13 @@ import time
 import traceback
 from logging import Logger
 from pathlib import Path
+from string import Template
 from subprocess import CalledProcessError, PIPE
 
 from playsound import playsound, PlaysoundException
 
 from utils.conf import Args, load_conf
+import utils.consts
 from utils.consts import *
 from utils.fonts import FontChecker
 from utils.logger import initFileLogger
@@ -21,7 +23,7 @@ from utils.paths import TMP, Paths
 from utils.subtype import SubType
 from utils.sysargs import get_sysargs
 
-VER = 'v2.0.14'
+VER = 'v2.1.0'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -57,15 +59,15 @@ def proc_audio(invid, outaud, template, script_tmp, logger_file, debug=False):
     vspipe.stderr.close()
 
 def gen_audio_script(template, src):
-    assert '{src}' in template, 'vpy脚本不符合要求！需要设置输入路径变量为r"{src}"！'
-    return template.format(src=src)
+    assert '$src' in template, 'vpy脚本不符合要求！需要设置输入路径变量为r"$src"！'
+    return Template(template).substitute(src=src)
 
 # 视频处理
 def gen_script(template, src, ass, resl):
-    assert '{src}' in template and ('{ass}' in template if ass else True) and '{w}' in template and '{h}' in template, 'vpy脚本不符合要求！请参考`src/template.vpy`中2～5行设置输入路径和成片分辨率变量！'
+    assert '$src' in template and ('$ass' in template if ass else True) and '$w' in template and '$h' in template, 'vpy脚本不符合要求！请参考`src/template.vpy`中2～5行设置输入路径和成片分辨率变量！'
     w = '1920' if resl == '1080' else '1280'
     h = '1080' if resl == '1080' else '720'
-    return template.format(src=src, ass=ass, w=w, h=h)
+    return Template(template).substitute(src=src, ass=ass, w=w, h=h)
 
 def proc_video(invid, inaud, resl, outvid, template, vs_tmp, script_tmp, prefix='', logger_file:Logger=None, ass=None, debug=False):
     if not (SKIPVSTMP and os.path.exists(vs_tmp)):
@@ -120,15 +122,8 @@ def remove_tmps(tmp_fullpaths: list[str]):
             os.remove(tmp)
 
 
-def main(tmp_fullpaths):
-    global workpath, M4A_TMP, sysargs
-    print(DESCRIPTION)
-    sysargs = get_sysargs()
-    
-    conf_path = str(Path(sysargs.conf_path).absolute())
-    print('\n配置文件路径：', conf_path)
-
-    load_conf(conf_path)
+def main(sysargs, tmp_fullpaths):
+    global workpath, M4A_TMP
 
     ass_paths = {}  # type: dict[SubType, str]
     workpath, invid, ass_paths[SubType.SJ], ass_paths[SubType.TJ] = parse_workpath(sysargs.work_path)  # full path
@@ -236,7 +231,8 @@ class Subtask:
         self.asstmp_path = None
         if not noass:
             asstmp_path = os.path.join(TMP, f'{prefix_tmp}_ass.ass')
-            shutil.copyfile(asssrc_path, asstmp_path)
+            if not os.path.exists(asstmp_path):
+                shutil.copyfile(asssrc_path, asstmp_path)
             self.asstmp_path = asstmp_path
 
         self.resl = resl
@@ -285,12 +281,19 @@ class Task(threading.Thread):
 
 
 if __name__ == '__main__':
-    global PURGETMP, sysargs
     tmp_fullpaths = []  # record tmp files for removal
+
+    print(DESCRIPTION)
+    sysargs = get_sysargs()
+
+    conf_path = str(Path(sysargs.conf_path).absolute())
+    print('\n配置文件路径：', conf_path)
+    load_conf(conf_path)
+
     try:
-        main(tmp_fullpaths)
+        main(sysargs, tmp_fullpaths)
     except CalledProcessError as err:
-        PURGETMP = False
+        utils.consts.PURGETMP = False
         if DEBUGMODE:
             traceback.print_exc()
         elif sysargs.debug:
@@ -303,14 +306,14 @@ if __name__ == '__main__':
         print()
         print(err)
     except Exception as err:
-        PURGETMP = False
+        utils.consts.PURGETMP = False
         traceback.print_exc()
         print('\n发生了未知错误！请将上面的报错信息提交到 https://github.com/zhimengsub/compresser/issues')
     else:
         log('成功！')
         playring()
     finally:
-        if PURGETMP:
+        if utils.consts.PURGETMP:
             remove_tmps(tmp_fullpaths)
 
         if PAUSE:

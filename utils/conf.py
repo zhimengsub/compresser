@@ -3,6 +3,7 @@ import os.path
 from pathlib import Path
 from addict import Dict
 
+import utils.consts
 from utils.paths import BASE, BASE_TMP, Paths
 
 Args = Dict(
@@ -20,6 +21,7 @@ KEY_ARGS = 'ARG_TEMPLATES'
 KEY_THR = 'ParallelTasks'
 KEY_SUF = 'Suffixes'
 KEY_OUTPAT = 'OutputPattern'
+KEY_DEBUG = 'DEBUG'
 
 # for conf assertion
 SKIP = ['hint']
@@ -62,6 +64,9 @@ def load_conf(conf_path: str):
     defaults[KEY_OUTPAT] = {
         'folder': '[Yumezukuri] {NAME} [{EP_EN}]',
         'file': '[Yumezukuri] {NAME} [{EP_EN}] [AVC-8bit {RESL}P] [{LANG_EN}] [{VER}]',
+    }
+    defaults[KEY_DEBUG] = {
+        'purge_tmpfile': 'true'
     }
     if not os.path.exists(conf_path):
         defaults[KEY_THR] = {
@@ -119,8 +124,12 @@ def load_conf(conf_path: str):
         # KEY_OUTPAT
         Args.OutPat.update(conf[KEY_OUTPAT])
 
+        utils.consts.PURGETMP = conf[KEY_DEBUG].getboolean('purge_tmpfile')
+
     except KeyError as err:
         raise AssertionError('配置文件结构不完整，请删除'+conf_path+'后重新运行本程序！')
+
+    return conf
 
 def assert_conf():
     # assert config files
@@ -136,6 +145,13 @@ def assert_conf():
             assert os.path.exists(conf[KEY_TemplatePaths][j]), '错误！无法找到 ['+KEY_TemplatePaths+'] 中的 ' + j + ' 项，路径'+conf[KEY_TemplatePaths][j]+'，请重新配置conf.ini对应项。'
     assert 'x264_output' in conf[KEY_SUF] and conf[KEY_SUF]['x264_output'].startswith('.'), '错误！['+KEY_SUF+'] 中的配置错误'
     assert 'merged_output' in conf[KEY_SUF] and conf[KEY_SUF]['merged_output'].startswith('.'), '错误！['+KEY_SUF+'] 中的配置错误'
+    try:
+        assert 'purge_tmpfile' in conf[KEY_DEBUG]
+        conf[KEY_DEBUG].getboolean('purge_tmpfile')
+    except (AssertionError, ValueError):
+        raise AssertionError('错误！['+KEY_DEBUG+']中的配置错误')
+
+
 
 
 def to_abs(path):

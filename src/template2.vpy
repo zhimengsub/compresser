@@ -2,10 +2,10 @@
 from vapoursynth import core
 import mvsfunc as mvf
 
-src=r"{src}"
-ass=r"{ass}"
-width={w}
-height={h}
+src=r"$src"
+ass=r"$ass"
+width=$w
+height=$h
 
 src=core.lsmas.LWLibavSource(src,repeat=True,threads=16)
 

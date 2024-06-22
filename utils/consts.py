@@ -3,7 +3,8 @@ import sys
 sysargs = {}
 
 # for debug
-DEBUG = hasattr(sys, 'gettrace') and sys.gettrace() is not None
+# DEBUG = hasattr(sys, 'gettrace') and sys.gettrace() is not None
+DEBUG = False
 DEBUGMODE = DEBUG or False
 USETESTFOLDER = DEBUGMODE
 SKIPAUD = DEBUGMODE or False

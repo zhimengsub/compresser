@@ -9,7 +9,6 @@ from utils.paths import BASE, BASE_TMP, Paths
 Args = Dict(
     TASKS=[],  # type: list[list[str]]
     ARGSX264='',
-    ARGSQAAC='',
     Suffxies={},
     OutPat={},
 )
@@ -38,7 +37,6 @@ def load_conf(conf_path: str):
         'ffmpeg': r"D:\Software\ffmpeg\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe",
         'VSPipe': r"D:\Software\VapourSynth\VapourSynth64Portable\VapourSynth64\VSPipe.exe",
         'x264': r"D:\Software\VapourSynth\VapourSynth64Portable\bin\x264.exe",
-        'qaac': r"D:\Software\MeGUI\MeGUI-2944-32\tools\qaac\qaac.exe",
     }
     defaults[KEY_PATHS] = {
         'root_folder': r"D:\animes",
@@ -51,11 +49,9 @@ def load_conf(conf_path: str):
         '1080cht': r'src\template2.vpy',
         '720chs_noass': r'src\template_noass.vpy',
         '720cht_noass': r'src\template_noass.vpy',
-        'audio': r'src\template_audio.vpy'
     }
     defaults[KEY_ARGS] = {
         'x264': '--demuxer y4m --preset veryslow --ref 8 --merange 24 --me umh --bframes 10 --aq-mode 3 --aq-strength 0.7 --deblock 0:0 --trellis 2 --psy-rd 0.6:0.1 --crf 18.5 --output-depth 8 - -o "{VS_TMP}"',
-        'qaac': '--ignorelength --threading -V 91 --no-delay - -o "{M4A_TMP}"'
     }
     defaults[KEY_SUF] = {
         'x264_output': '.mp4',
@@ -89,13 +85,11 @@ def load_conf(conf_path: str):
     try:
         # KEY_TOOLS
         Paths.FFMPEG = conf[KEY_TOOLS]['ffmpeg']
-        Paths.QAAC = conf[KEY_TOOLS]['qaac']
         Paths.VSPIPE = conf[KEY_TOOLS]['VSPipe']
         Paths.X264 = conf[KEY_TOOLS]['x264']
 
         # KEY_ARGS
         Args.ARGSX264 = conf[KEY_ARGS]['x264']
-        Args.ARGSQAAC = conf[KEY_ARGS]['qaac']
 
         # KEY_PATHS
         Paths.ROOT_FOLDER = conf[KEY_PATHS]['root_folder']

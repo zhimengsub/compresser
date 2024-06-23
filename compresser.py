@@ -23,7 +23,7 @@ from utils.paths import TMP, Paths
 from utils.subtype import SubType
 from utils.sysargs import get_sysargs
 
-VER = 'v2.1.0'
+VER = 'v2.1.1'
 DESCRIPTION = '************************************************************************************\n' + \
               '* 织梦字幕组自动压制工具\n' + \
               '* —— ' + VER + ' by 谢耳朵w\n*\n' + \
@@ -32,35 +32,21 @@ DESCRIPTION = '*****************************************************************
 
 
 # 音频处理
-def proc_audio(invid, outaud, template, script_tmp, logger_file, debug=False):
-    # 生成y音频用vpy
-    script = gen_audio_script(template, invid)
-    with open(script_tmp, 'w', encoding='utf8') as f:
-        f.write(script)
-    # vs打开后喂给qaac
-    cmdvspipe = f'"{Paths.VSPIPE}" "{script_tmp}" -o 1 -c wav -'
-    argsqaac = Args.ARGSQAAC.format(M4A_TMP=outaud)
-    assert argsqaac
-    cmdqaac = f'"{Paths.QAAC}" {argsqaac.strip()}'
-    log(cmdvspipe, '|', cmdqaac)
-    logger_file.debug(cmdvspipe)
-    vspipe = subprocess.Popen(cmdvspipe, stdout=PIPE, stderr=PIPE)
-    qaac = None
+def proc_audio(invid, outaud, logger_file, debug=False):
+    # 直接用ffmpeg提取音频
+    cmdffmpeg = f'"{Paths.FFMPEG}" -y -i "{invid}" -c:a copy -vn "{outaud}"'
+    log(cmdffmpeg)
+    logger_file.debug(cmdffmpeg)
+    ffmpeg = None
     try:
         if debug:
-            qaac = subprocess.run(cmdqaac, stdin=vspipe.stdout)
+            ffmpeg = subprocess.run(cmdffmpeg, check=True)
         else:
-            qaac = subprocess.run(cmdqaac, stdin=vspipe.stdout, stdout=PIPE, stderr=PIPE)
+            ffmpeg = subprocess.run(cmdffmpeg, check=True, stdout=PIPE, stderr=PIPE)
     finally:
-        if logger_file and qaac and not debug:
+        if logger_file and ffmpeg and not debug:
             logger_file.debug('')
-            log_process(logger_file, cmdqaac, qaac)
-    vspipe.stdout.close()
-    vspipe.stderr.close()
-
-def gen_audio_script(template, src):
-    assert '$src' in template, 'vpy脚本不符合要求！需要设置输入路径变量为r"$src"！'
-    return Template(template).substitute(src=src)
+            log_process(logger_file, cmdffmpeg, ffmpeg)
 
 # 视频处理
 def gen_script(template, src, ass, resl):
@@ -123,13 +109,12 @@ def remove_tmps(tmp_fullpaths: list[str]):
 
 
 def main(sysargs, tmp_fullpaths):
-    global workpath, M4A_TMP
+    global workpath, AUD_TMP
 
     ass_paths = {}  # type: dict[SubType, str]
     workpath, invid, ass_paths[SubType.SJ], ass_paths[SubType.TJ] = parse_workpath(sysargs.work_path)  # full path
     if Paths.RING: print('\n使用提示音：', Paths.RING.replace('/', '\\'))
     print('\n使用X264参数：', Args.ARGSX264)
-    print('\n使用QAAC参数：', Args.ARGSQAAC)
 
     print('\n配置解析结果：')
     print('工作目录：', Paths.ROOT_FOLDER)
@@ -177,7 +162,7 @@ def main(sysargs, tmp_fullpaths):
     print('\n成片将保存至')
     print(subfolder)
 
-    M4A_TMP = os.path.join(TMP, f'{invidname_noext}_m4a.m4a')
+    AUD_TMP = os.path.join(TMP, f'{invidname_noext}_audio.mp4')
 
     task_runners = []
     for task in Args.TASKS:
@@ -193,24 +178,20 @@ def main(sysargs, tmp_fullpaths):
                 if s in isolated_noass_subtasks and not os.path.exists(outvid_1080):
                     raise AssertionError('错误！需要二压，但' + s + '任务不存在1080版任务或成片！')
 
-                subtask = Subtask(s, invidname_noext, outvid_1080, M4A_TMP, subfolder, anime_name, ep, asssrc_path=None, debug=sysargs.debug)
+                subtask = Subtask(s, invidname_noext, outvid_1080, AUD_TMP, subfolder, anime_name, ep, asssrc_path=None, debug=sysargs.debug)
             else:
                 asssrc_path = ass_paths[subtype]
-                subtask = Subtask(s, invidname_noext, invid, M4A_TMP, subfolder, anime_name, ep, asssrc_path, debug=sysargs.debug)
+                subtask = Subtask(s, invidname_noext, invid, AUD_TMP, subfolder, anime_name, ep, asssrc_path, debug=sysargs.debug)
             print(subtask.outvidname)
             tmp_fullpaths.extend(subtask.tmp_fullpaths)
             subtasks.append(subtask)
         task_runners.append(Task(subtasks))
 
-    if not (SKIPAUD and os.path.exists(M4A_TMP)):
-        log('提取音频并转码为m4a...')
+    if not (SKIPAUD and os.path.exists(AUD_TMP)):
+        log('提取音频...')
         logger_file = initFileLogger('audio')
-        with open(Paths.TemplatePaths.audio, 'r', encoding='utf8') as f:
-            template_audio = f.read()
-        tmpprefix = f'{invidname_noext}_audio'
-        script_audio_tmp = get_script_tmp_path(tmpprefix)
-        proc_audio(invid, M4A_TMP, template_audio, script_audio_tmp, logger_file, debug=sysargs.debug)
-        tmp_fullpaths.extend([M4A_TMP, script_audio_tmp])
+        proc_audio(invid, AUD_TMP, logger_file, debug=sysargs.debug)
+        tmp_fullpaths.extend([AUD_TMP])
 
     st = time.time()
     [task_runner.start() for task_runner in task_runners]

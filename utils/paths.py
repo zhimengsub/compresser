@@ -7,7 +7,6 @@ Paths = Dict(
     RING='',
     ROOT_FOLDER='',
     FFMPEG='',
-    QAAC='',
     VSPIPE='',
     X264='',
     TemplatePaths = {

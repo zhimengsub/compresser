@@ -17,7 +17,6 @@
    ffmpeg = D:\Software\ffmpeg\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe
    vspipe = D:\Software\VapourSynth\VapourSynth64Portable\VapourSynth64\VSPipe.exe
    x264 = D:\Software\VapourSynth\VapourSynth64Portable\bin\x264.exe
-   qaac = D:\Software\MeGUI\MeGUI-2913-32\tools\qaac\qaac.exe
    
    [PATHS]
    ; (必须) 配置输出文件的根目录（具体作用见第4步）
@@ -35,13 +34,10 @@
    ; 下面这几个不要修改
    720chs_noass = src\template_noass.vpy
    720cht_noass = src\template_noass.vpy
-   audio = src\template_audio.vpy
    
    [ARG_TEMPLATES]
    ; (可选) 定义X264参数。注意-o参数必须为"{VS_TMP}" (含引号)
    x264 = --demuxer y4m --preset veryslow --ref 8 --merange 24 --me umh --bframes 10 --aq-mode 3 --aq-strength 0.7 --deblock 0:0 --trellis 2 --psy-rd 0.6:0.1 --crf 18.5 --output-depth 8 - -o "{VS_TMP}"
-   ; (可选) 定义QAAC参数。注意-o参数必须为"{VS_TMP}" (含引号)
-   qaac = --ignorelength --threading -V 91 --no-delay - -o "{M4A_TMP}"
    
    [Suffixes]
    ; (可选) 修改x264输出或封装音视频后成片的格式

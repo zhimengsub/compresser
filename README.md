@@ -10,42 +10,52 @@
 
 1. 编辑配置文件`conf.ini`（首次运行时双击运行`compresser.bat`后会在同一目录下生成）
 
-   说明：（`(必须)`表示必须根据实际情况进行修改的参数，`(可选)`则表示可以不用修改）
+   说明：（`(必改)`表示必须根据实际情况进行修改的参数，`(选改)`则表示可以不用修改）
    ```ini
    [TOOLS]
-   ; (必须) 配置各工具目录
+   ; (必改) 配置各工具目录（x264与x265至少配置一个）
    ffmpeg = D:\Software\ffmpeg\ffmpeg-master-latest-win64-gpl\bin\ffmpeg.exe
+   mp4box = G:\Portable\小丸工具箱\xiaowan\tools\mp4box.exe
    vspipe = D:\Software\VapourSynth\VapourSynth64Portable\VapourSynth64\VSPipe.exe
    x264 = D:\Software\VapourSynth\VapourSynth64Portable\bin\x264.exe
+   x265 = D:\Software\VapourSynth\VapourSynth64Portable\bin\x265.exe
    
    [PATHS]
-   ; (必须) 配置输出文件的根目录（具体作用见第4步）
+   ; (必改) 配置输出文件的根目录（具体作用见第4步）
    root_folder = D:\Animes
-   ; (可选) 定义结束提示音文件的目录(相对路径或绝对路径)，等号右侧值为空则关闭提示音。
+   ; (选改) 定义结束提示音文件的目录(相对路径或绝对路径)，等号右侧值为空则关闭提示音。
    hint = src\ring.mp3
    
    [TemplatePaths]
-   ; (可选) 定义不同任务的VS脚本模版的目录(相对或绝对路径)，
+   ; (选改) 定义不同任务的VS脚本模版的目录(相对或绝对路径)，
    ;   注意不是普通vpy脚本，请参考src\template.vpy中2～5行设置输入路径和成片分辨率变量。
-   720chs = src\template.vpy
-   720cht = src\template.vpy
-   1080chs = src\template2.vpy
-   1080cht = src\template2.vpy
-   ; 下面这几个不要修改
+   ;   可以为x264和x265指定不同的VS脚本模板
+   720chs264 = src\template.vpy
+   720cht264 = src\template.vpy
+   1080chs264 = src\template 2023-11_1080P.vpy
+   1080cht264 = src\template 2023-11_1080P.vpy
+   720chs265 = src\template.vpy
+   720cht265 = src\template.vpy
+   1080chs265 = src\template 2023-11_1080P.vpy
+   1080cht265 = src\template 2023-11_1080P.vpy
+   ; 下面这几个是二压时用的版本，输入是已经压好的1080P成片
    720chs_noass = src\template_noass.vpy
    720cht_noass = src\template_noass.vpy
    
    [ARG_TEMPLATES]
-   ; (可选) 定义X264参数。注意-o参数必须为"{VS_TMP}" (含引号)
+   ; (选改) 定义x264、x265参数。注意-o参数必须为"{VS_TMP}" (含引号)
    x264 = --demuxer y4m --preset veryslow --ref 8 --merange 24 --me umh --bframes 10 --aq-mode 3 --aq-strength 0.7 --deblock 0:0 --trellis 2 --psy-rd 0.6:0.1 --crf 18.5 --output-depth 8 - -o "{VS_TMP}"
+   x265 = --y4m --preset slower --frame-threads 1 --deblock -1:-1 --ctu 32 --crf 16.0 --pbratio 1.2 --cbqpoffs -2 --crqpoffs -2 --no-sao --me 3 --subme 3 --merange 44 --b-intra --no-rect --no-amp --ref 4 --weightb --keyint 360 --min-keyint 1 --bframes 6 --aq-mode 1 --aq-strength 0.8 --rd 4 --psy-rd 2.0 --psy-rdoq 3.0 --no-open-gop --rc-lookahead 80 --scenecut 40 --qcomp 0.65 --no-strong-intra-smoothing --vbv-bufsize 30000 --vbv-maxrate 28000 --output-depth 10 - -o "{VS_TMP}"
    
    [Suffixes]
-   ; (可选) 修改x264输出或封装音视频后成片的格式
-   x264_output = .mp4
-   merged_output = .mp4
+   ; (选改) 修改x264、x265视频（无声音）输出格式（对应xxx_vs_output），以及封装音视频后成片的格式（对应xxx_merged_output）
+   x264_vs_output = .mp4
+   x264_merged_output = .mp4
+   x265_vs_output = .hevc
+   x265_merged_output = .mp4
    
    [OutputPattern]
-   ; (可选) 修改成片的命名规则，变量部分用花括号括起来（繁体版成片命名会自动繁化）
+   ; (选改) 修改成片的命名规则，变量部分用花括号括起来（繁体版成片命名会自动繁化）
    ; 成片所在文件夹命名，支持的变量有：
    ;    NAME: 番名（见第4步）
    ;    EP_EN: 集数，阿拉伯数字，示例："09"、"31"
@@ -53,31 +63,35 @@
    ; 设置参考：
    ; [织梦字幕组][{NAME}][{EP_EN}集] -> [织梦字幕组][电锯人 Chainsaw Man][01集]
    folder = [织梦字幕组][{NAME}][{EP_EN}集]
-   ; 成片命名，支持的变量有：
+   ; 成片命名，支持的变量有（按需使用）：
    ;    NAME: 番名（见第4步）
    ;    EP_EN: 集数，阿拉伯数字，示例："09"、"31"
    ;    EP_ZH: 集数，中文，示例："九"、"三十一"
-   ;    RESP: 分辨率，取值："1080"或"720"
+   ;    VTYPE: 视频编码器，取值："HEVC"或"AVC"，取决使用x265还是x264
+   ;    BIT: 位深，取决于[ARG_TEMPLATES]中--output-depth的值
+   ;    RESL: 分辨率，取值："1080"或"720"
    ;    LANG: 语言，取值："简日双语"或"繁日双语"
+   ;    LANG_EN: 语言，英文，取值："CHS＆JPN"或"CHT＆JPN"
    ;    VER: 版本号，示例："V2"、"V3"（如果为V1则会连同方括号一起删除）
-   ; [织梦字幕组][{NAME}][{EP_EN}集][{RESL}P][AVC][{LANG}] -> [织梦字幕组][电锯人 Chainsaw Man][01集][AVC][简日双语][1080P]
+   ; [织梦字幕组][{NAME}][{EP_EN}集][{RESL}P][AVC][{VENC}][{LANG}] -> [织梦字幕组][电锯人 Chainsaw Man][01集][AVC][x265][简日双语][1080P]
    ; [织梦字幕组]{NAME}[{EP_EN}][第{EP_ZH}夜][GB_JP][AVC][{RESL}P] -> [织梦字幕组]与猫共度的夜晚 夜は猫といっしょ[39][第三十九夜][GB_JP][AVC][1080P]
-   file = [织梦字幕组][{NAME}][{EP_EN}集][{RESL}P][AVC][{LANG}][{VER}]
+   file = [织梦字幕组][{NAME}][{EP_EN}集][{RESL}P][AVC][{VENC}][{LANG}][{VER}]
    
 
    [ParallelTasks]
-   ; 添加并行任务，设置分辨率和字幕语言。
-   ; chs表示简中，cht表示繁中。
+   ; 添加并行任务，设置分辨率、字幕语言和编码器。
+   ; 分辨率：1080或720
+   ; 字幕语言：chs表示简中，cht表示繁中。
+   ; 编码器：264或265，必须要选其中一种
    ; 不同行之间并行执行；同一行内串行执行，用逗号隔开。
    ; 下面的代码表示依次压制1080chs和720chs，与此同时也在依次压制1080cht和720cht
-   task1 = 1080chs, 720chs
-   task2 = 1080cht, 720cht
+   task1 = 1080chs265, 720chs264
+   task2 = 1080cht265, 720cht264
    ; 下面的代码同时压制所有任务
    ; task1 = 1080chs
    ; task2 = 1080cht
    ; task3 = 720chs
    ; task4 = 720cht
-
    ```
 2. 准备原片文件夹
    
@@ -130,7 +144,3 @@ bat本体不能移动，可以创建bat的快捷方式，然后把快捷方式�
 
 
 
-# TODO
-
-- [x] 自定义成片命名格式
-- [X] 自定义传入x264的参数

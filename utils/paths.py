@@ -7,16 +7,11 @@ Paths = Dict(
     RING='',
     ROOT_FOLDER='',
     FFMPEG='',
+    MP4BOX='',
     VSPIPE='',
     X264='',
-    TemplatePaths = {
-        '720chs': '',
-        '720cht': '',
-        '1080chs': '',
-        '1080cht': '',
-        '720chs_noass': '',
-        '720cht_noass': '',
-    }
+    X265='',
+    TemplatePaths={}
 )
 
 ISEXE = hasattr(sys, 'frozen')

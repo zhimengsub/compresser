@@ -128,7 +128,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 /.idea
-/tmp
+/test_root
 *.ini
 *.bat
 test*
